@@ -57,6 +57,8 @@ extern "C" {
 #include "kelo_tulip/soem/ethercatdc.h"
 #include "kelo_tulip/soem/ethercatprint.h"
 }
+#include "kelo_tulip/VelocityPlatformController.h"
+#include "kelo_tulip/Utils.h"
 #include <boost/thread.hpp>
 #include <string>
 #include <fstream>
@@ -155,7 +157,8 @@ enum DriverError {
 
 class PlatformDriver {
 public:
-	PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int nWheels);
+    PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs,
+                   std::vector<WheelData>* wheelData, int firstWheel, int nWheels);
 	virtual ~PlatformDriver();
 
 	bool initEthercat();
@@ -261,7 +264,7 @@ protected:
 	bool calibrationStarted;
 	boost::posix_time::ptime startTimeCalibration;
 
-	int nWheels;
+	int firstWheel, nWheels;
 	std::vector<WheelConfig>* wheelConfigs;
 	std::vector<WheelData>* wheelData;
 
@@ -280,6 +283,8 @@ protected:
 	double maxangleacc;
 	double maxvaacc;
 
+	double wheelsetpointmin;
+	double wheelsetpointmax;
 
 	volatile bool statusError;
 	volatile bool slipError;
@@ -288,6 +293,7 @@ protected:
 
 private:
 	PlatformDriver(const PlatformDriver&);
+    VelocityPlatformController velocityPlatformController;
 };
 
 } //namespace kelo

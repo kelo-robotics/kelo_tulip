@@ -446,8 +446,9 @@ int main (int argc, char** argv)
 //TODO check
 		
 	bool hasNumWheel = nh.getParam("num_wheels", nWheelsMaster);
+    int firstWheel = 0;
 
-	driver = new kelo::PlatformDriver(device, &wheelConfigs, &wheelData, nWheelsMaster);
+	driver = new kelo::PlatformDriver(device, &wheelConfigs, &wheelData, firstWheel, nWheelsMaster);
 
 	wheelIndex += nWheelsMaster;
 
