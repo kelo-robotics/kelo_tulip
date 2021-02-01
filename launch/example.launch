@@ -1,0 +1,8 @@
+<launch>
+
+<rosparam file="$(find smart_wheel_driver)/config/$(optenv ROBOT_NAME example).yaml" command="load" ns="smart_wheel_driver" />
+<node pkg="smart_wheel_driver" type="smart_wheel_driver_ros" name="smart_wheel_driver" output="screen"/>
+
+<!-- node pkg="joy" type="joy_node" name="joy" output="screen"/ -->
+
+</launch>

@@ -1,0 +1,40 @@
+num_wheels: 4
+num_masters: 1
+
+master0:
+  device: enp2s0
+
+wheel0:
+  ethercat_number: 2
+  x: 0.175
+  y: 0.1605
+  a: -2.50
+  a2: 0.66
+  reverse_velocity: 1
+  critical: 0
+
+wheel1:
+  ethercat_number: 3
+  x: -0.175
+  y: 0.1605
+  a: -1.25
+  a2: 0.48
+  reverse_velocity: 1
+  critical: 0
+
+wheel2:
+  ethercat_number: 5
+  x: -0.175
+  y: -0.1607
+  a: -2.14
+  a2: 1.0
+  reverse_velocity: 1
+  critical: 0
+
+wheel3:
+  ethercat_number: 6
+  x: 0.175
+  y: -0.1605
+  a: 1.49
+  reverse_velocity: 1
+  critical: 0

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package>
+  <name>kelo_tulip</name>
+  <version>1.0.0</version>
+  <description>KELO Tulip software</description>
+  <author email="nowak@locomotec.com">walter</author>
+  <maintainer email="nowak@locomotec.com">walter</maintainer>
+  <license>internal</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>tf</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>tf</run_depend>
+</package>
