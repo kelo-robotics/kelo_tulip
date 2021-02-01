@@ -1,6 +1,6 @@
 <launch>
 
-	<include file="$(find smart_wheel_driver)/launch/example.launch"/>
+	<include file="$(find kelo_tulip)/launch/example.launch"/>
 	<node pkg="joy" type="joy_node" name="joy" output="screen" />
 	<!-- node pkg="forcejoy" type="forcejoy" name="forcejoy" output="screen" / -->
 
