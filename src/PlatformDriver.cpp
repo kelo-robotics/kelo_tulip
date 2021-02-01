@@ -58,8 +58,8 @@ extern "C" {
 
 namespace kelo {
 
-PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>*
-        wheelConfigs, std::vector<WheelData>* wheelData, int firstWheel, int nWheels)
+PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs,
+                               std::vector<WheelData>* wheelData, int firstWheel, int nWheels)
 	: wheelConfigs(wheelConfigs)
 	, wheelData(wheelData)
     , firstWheel(firstWheel)
@@ -484,8 +484,6 @@ static int lastWkc = 0;
 		if (step > 10) // TODO check
 			updateStatusError();
 		
-		// TODO check
-		//if (calibrated && state == DRIVER_STATE_INIT)
 		if (state == DRIVER_STATE_INIT) {
 				state = DRIVER_STATE_READY;
 		} else { // do control loop

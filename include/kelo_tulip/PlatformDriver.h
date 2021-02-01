@@ -70,7 +70,6 @@ struct WheelConfig {
 	double x;
 	double y;
 	double a;
-	int iMaster;
 	int critical;
 	bool reverseVelocity;
 };
@@ -78,62 +77,9 @@ struct WheelConfig {
 struct WheelData {
 	bool enable;
 	
-	bool calibrated;
-	bool isCalibrating;
-	int calibrationTries;
 	bool error;
 	bool errorTimestamp;
 
-	double targetvlin;
-	double targetvrot;
-	double targetva;
-	double targetangle;
-
-	double vlin;
-	
-	double theta;
-	double a;
-	double senseda;
-	double da;
-	
-// 	double fractionVel;
-// 
-// 	double rw;
-// 	double r;
-// 	double vheading;
-// 
-// 	double setvlin;
-// 	double setangle;
-// 	double setva;
-// 	double setalpha;
-// 	double setdebug;
-// 
-// 	double validvlin;
-// 	double validva;
-// 
-// 	double setpoint1;
-// 	double setpoint2;
-// 	
-// 	double minTheta;
-// 	double maxTheta;
-// 	
-// 	double slip1;
-// 	double slip2;
-// 	
-// 	double stall1;
-// 	double stall2;
-// 		
-// 	// mailbox parameters
-// 	float electricAngle1;
-// 	float electricAngle2;
-// 	float observedAngle1;
-// 	float observedAngle2;
-// 	float encoderOffset1;
-// 	float encoderOffset2;
-// 	float x1_1;
-// 	float x1_2;
-// 	float x2_1;
-// 	float x2_2;
 };
 
 enum DriverState {
@@ -141,7 +87,6 @@ enum DriverState {
 	DRIVER_STATE_ACTIVE = 0x01,
 	DRIVER_STATE_READY = 0x02,
 	DRIVER_STATE_INIT = 0x04,
-	DRIVER_STATE_REMOTECONTROL = 0x08,
 	DRIVER_STATE_ERROR = 0x10,
 	DRIVER_STATE_TIMEOUT = 0x20
 };
@@ -256,13 +201,6 @@ protected:
 	bool encoderInitialized;
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
-
-	volatile bool canStartCalibration;
-	volatile bool calibrated;
-	volatile int calibrationWheel;
-	int calibrationMaxTries;	
-	bool calibrationStarted;
-	boost::posix_time::ptime startTimeCalibration;
 
 	int firstWheel, nWheels;
 	std::vector<WheelConfig>* wheelConfigs;

@@ -110,7 +110,6 @@ void readWheelConfig(const ros::NodeHandle& nh) {
 		std::string groupName = ssGroupName.str();
 
 		kelo::WheelConfig config;
-		config.iMaster = 0;
 		config.reverseVelocity = false;
 		bool ok =		
 		     nh.getParam(groupName + "/ethercat_number", config.ethercatNumber)
