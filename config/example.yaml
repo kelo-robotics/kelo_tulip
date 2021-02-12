@@ -1,8 +1,7 @@
 num_wheels: 4
 num_masters: 1
 
-master0:
-  device: enp2s0
+device: enp2s0
 
 wheel0:
   ethercat_number: 2

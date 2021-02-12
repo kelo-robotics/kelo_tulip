@@ -110,7 +110,6 @@ void readWheelConfig(const ros::NodeHandle& nh) {
 		std::string groupName = ssGroupName.str();
 
 		kelo::WheelConfig config;
-		config.iMaster = 0;
 		config.reverseVelocity = false;
 		bool ok =		
 		     nh.getParam(groupName + "/ethercat_number", config.ethercatNumber)
@@ -416,8 +415,8 @@ void publishAll(const ros::TimerEvent&) {
 
 int main (int argc, char** argv)
 {
-	ros::init (argc, argv, "smart_wheel_driver");
-	ros::NodeHandle nh("smart_wheel_driver");
+	ros::init (argc, argv, "platform_driver");
+	ros::NodeHandle nh("~");
 	
 	nh.getParam("num_wheels", nWheels);
 	
@@ -431,7 +430,6 @@ int main (int argc, char** argv)
 	data.enable = true;
 	data.error = false;
 	data.errorTimestamp = false;
-	data.fractionVel = 1.0;
 	wheelData.resize(nWheels, data);
 
 	// read all wheel configs
@@ -447,8 +445,9 @@ int main (int argc, char** argv)
 //TODO check
 		
 	bool hasNumWheel = nh.getParam("num_wheels", nWheelsMaster);
+    int firstWheel = 0;
 
-	driver = new kelo::PlatformDriver(device, &wheelConfigs, &wheelData, nWheelsMaster);
+	driver = new kelo::PlatformDriver(device, &wheelConfigs, &wheelData, firstWheel, nWheelsMaster);
 
 	wheelIndex += nWheelsMaster;
 
@@ -521,7 +520,7 @@ int main (int argc, char** argv)
 	imuPublisher = nh.advertise<sensor_msgs::Imu>("imu", 10);
 	batteryPublisher = nh.advertise<std_msgs::Float32>("battery", 10);
 //	errorPublisher = nh.advertise<std_msgs::Int32>("error", 10);
-//	statusPublisher = nh.advertise<std_msgs::Int32>("status", 10);
+	statusPublisher = nh.advertise<std_msgs::Int32>("status", 10);
 	ros::Subscriber joySubscriber = nh.subscribe("/joy", 1000, joyCallback);
 	ros::Subscriber cmdVelSubscriber = nh.subscribe("/cmd_vel", 1000, cmdVelCallback);
 	ros::Subscriber resetSubscriber = nh.subscribe("reset", 1, resetCallback);

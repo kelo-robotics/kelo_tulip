@@ -58,9 +58,11 @@ extern "C" {
 
 namespace kelo {
 
-PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int nWheels)
+PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs,
+                               std::vector<WheelData>* wheelData, int firstWheel, int nWheels)
 	: wheelConfigs(wheelConfigs)
 	, wheelData(wheelData)
+    , firstWheel(firstWheel)
 	, nWheels(nWheels)
 {
 	this->device = device;
@@ -90,6 +92,9 @@ PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* whe
 	timestampError = false;
 	canChangeActive = false;
 	showedMessageChangeActive = false;
+
+	wheelsetpointmin = 0.01;
+	wheelsetpointmax = 35.0;
 
 	EcatError = FALSE;
 	current_ts = 0;
@@ -129,6 +134,8 @@ PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* whe
 	ecx_context.PDOdesc = &ec_PDOdesc;
 	ecx_context.eepSM = &ec_SM;
 	ecx_context.eepFMMU = &ec_FMMU;
+
+    velocityPlatformController.initialise();
 }
 
 PlatformDriver::~PlatformDriver() {
@@ -138,27 +145,8 @@ PlatformDriver::PlatformDriver(const PlatformDriver&) {
 }
 
 void PlatformDriver::setTargetVelocity(double vx, double vy, double va) {
-	// calulate velocities for wheels
-	double vlin = sqrt(vx*vx + vy*vy);
 
-	bool allowBackwards = false;
-	if (allowBackwards) {
-		if (vx < 0) {
-			vx = -vx;
-			vy = vy;
-			vlin = -vlin;
-		}
-	}
-
-	for (unsigned int i=0; i<wheelData->size(); i++) {
-		(*wheelData)[i].targetvlin = vlin;
-
-		if (fabs(vlin) > 0.001) // do not rotate wheels if no linear vel (because of joystick behavior)
-			(*wheelData)[i].targetangle = atan2(vy, vx);
-
-		(*wheelData)[i].targetvrot = va;
-		(*wheelData)[i].targetva = va;
-	}
+    velocityPlatformController.setPlatformTargetVelocity(vx, vy, va);
 }
 
 void PlatformDriver::setWheelDistance(double x) {
@@ -486,19 +474,17 @@ static int lastWkc = 0;
 		threadPhase = 6;
 
 		lastProcessData = processData;
-		for (unsigned int i = 0; i < nWheels; i++)
+		for (unsigned int i = 0; i < nWheels; i++) // TODO: use an array or vector of wheels or atleast use firstWheel
 			processData[i] = *getProcessData((*wheelConfigs)[i].ethercatNumber);
 		
 		// TODO check if should take timestamp differently, or from each wheel separately
-		current_ts = processData[0].sensor_ts;
+		current_ts = processData[0].sensor_ts; // TODO: atleast use firstWheel
 		threadPhase = 7;
 	
 		if (step > 10) // TODO check
 			updateStatusError();
 		
-		// TODO check
-		//if (calibrated && state == DRIVER_STATE_INIT)
-		if (DRIVER_STATE_INIT) {
+		if (state == DRIVER_STATE_INIT) {
 				state = DRIVER_STATE_READY;
 		} else { // do control loop
 			updateEncoders();
@@ -727,7 +713,50 @@ void PlatformDriver::doStop() {
 }
 
 void PlatformDriver::doControl() {
-	// call velocity controller
+    // ASSUMPTION: firstWheel == 0 (TODO: discuss with Walter Nowak)
+    assert ( firstWheel == 0 );
+
+    /* initialise struct to be sent to wheels */
+	rxpdo1_t rxdata;
+	rxdata.timestamp = current_ts + 100 * 1000; // TODO
+	rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
+	rxdata.limit1_p = currentDrive;
+	rxdata.limit1_n = -currentDrive;
+	rxdata.limit2_p = currentDrive;
+	rxdata.limit2_n = -currentDrive;
+	rxdata.setpoint1 = 0;
+	rxdata.setpoint2 = 0;
+	
+	for (size_t i = firstWheel; i < firstWheel + nWheels; i++) {
+		txpdo1_t* wheel_data = getProcessData((*wheelConfigs)[i].ethercatNumber);
+
+		float setpoint1, setpoint2;
+
+        /* calculate wheel target velocity */
+        velocityPlatformController.calculateWheelTargetVelocity(i, wheel_data->encoder_pivot,
+                                                                setpoint2, setpoint1);
+        setpoint1 *= -1; // because of inverted frame
+
+        /* avoid sending close to zero values */
+        if ( fabs(setpoint1) < wheelsetpointmin )
+        {
+            setpoint1 = 0;
+        }
+        if ( fabs(setpoint2) < wheelsetpointmin )
+        {
+            setpoint2 = 0;
+        }
+
+        /* avoid sending very large values */
+        setpoint1 = Utils::clip(setpoint1, wheelsetpointmax, -wheelsetpointmax);
+        setpoint2 = Utils::clip(setpoint2, wheelsetpointmax, -wheelsetpointmax);
+
+        /* send calculated target velocity values to EtherCAT */
+		rxdata.setpoint1 = setpoint1;
+		rxdata.setpoint2 = setpoint2;
+        rxpdo1_t* ecData = (rxpdo1_t*) ecx_slave[(*wheelConfigs)[i].ethercatNumber].outputs;
+        *ecData = rxdata;					
+    }
 }
 
 } //namespace kelo
