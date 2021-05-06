@@ -12,7 +12,7 @@ else(WIN32)
 	)		
 endif(WIN32)
 
-ADD_LIBRARY(soem 
+ADD_LIBRARY(soem STATIC
 	ethercatbase.c 
 	ethercatcoe.c 
 	ethercatconfig.c 
