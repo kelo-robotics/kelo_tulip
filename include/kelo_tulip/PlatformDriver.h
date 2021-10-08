@@ -59,20 +59,12 @@ extern "C" {
 }
 #include "kelo_tulip/VelocityPlatformController.h"
 #include "kelo_tulip/Utils.h"
+#include "kelo_tulip/WheelConfig.h"
 #include <boost/thread.hpp>
 #include <string>
 #include <fstream>
 
 namespace kelo {
-
-struct WheelConfig {
-	int ethercatNumber;
-	double x;
-	double y;
-	double a;
-	int critical;
-	bool reverseVelocity;
-};
 
 struct WheelData {
 	bool enable;
