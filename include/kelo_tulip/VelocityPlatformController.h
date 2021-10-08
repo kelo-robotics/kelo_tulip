@@ -48,6 +48,7 @@
 
 #include <kelo_tulip/Utils.h>
 #include <kelo_tulip/Structs.h>
+#include <kelo_tulip/WheelConfig.h>
 #include <iostream>
 
 namespace kelo
@@ -61,7 +62,7 @@ namespace kelo
 
             virtual ~VelocityPlatformController();
 
-            void initialise();
+            void initialise(const std::vector<WheelConfig>& wheel_configs);
 
             void calculateWheelTargetVelocity(const size_t &wheel_index,
                                               const float &pivot_angle,

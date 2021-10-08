@@ -135,7 +135,7 @@ PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* whe
 	ecx_context.eepSM = &ec_SM;
 	ecx_context.eepFMMU = &ec_FMMU;
 
-    velocityPlatformController.initialise();
+	velocityPlatformController.initialise(*wheelConfigs);
 }
 
 PlatformDriver::~PlatformDriver() {

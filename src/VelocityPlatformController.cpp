@@ -69,11 +69,11 @@ namespace kelo
         platform_target_vel_.a = ( fabs(vel_a) < 0.0000001 ) ? 0.0 : vel_a;
     }
 
-    void VelocityPlatformController::initialise()
+    void VelocityPlatformController::initialise(const std::vector<WheelConfig>& wheel_configs)
     {
         // FIXME: remove hardcoding wheel params
 
-        unsigned int num_of_wheels = 4;
+        unsigned int num_of_wheels = wheel_configs.size();
 
         float wheel_diameter = 0.105f;
         float wheel_caster = 0.01f;
@@ -95,24 +95,12 @@ namespace kelo
             wheel_param.wheel_diameter = wheel_diameter;
             wheel_param.max_pivot_error = M_PI * 0.25f;
 
+	          wheel_param.pivot_position.x = wheel_configs[i].x;
+	          wheel_param.pivot_position.y = wheel_configs[i].y;
+	          wheel_param.pivot_offset = wheel_configs[i].a;
+
             wheel_params_.push_back(wheel_param);
         }
-
-        wheel_params_[0].pivot_position.x = 0.175f;
-        wheel_params_[0].pivot_position.y = 0.1605f;
-        wheel_params_[0].pivot_offset = -2.5f;
-
-        wheel_params_[1].pivot_position.x = -0.175f;
-        wheel_params_[1].pivot_position.y = 0.1605f;
-        wheel_params_[1].pivot_offset = -1.25f;
-
-        wheel_params_[2].pivot_position.x = -0.175f;
-        wheel_params_[2].pivot_position.y = -0.1605f;
-        wheel_params_[2].pivot_offset = -2.14f;
-
-        wheel_params_[3].pivot_position.x = 0.175f;
-        wheel_params_[3].pivot_position.y = -0.1605f;
-        wheel_params_[3].pivot_offset = 1.49f;
     }
 
     void VelocityPlatformController::calculateWheelTargetVelocity(
