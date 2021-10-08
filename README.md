@@ -100,15 +100,18 @@ This setting must be adjusted to the network interface by which the KELO drives 
 
 #### Wheels
 
-The controller needs to know the location of the wheels in the body fixed frame of the platform as well as the offset of their pivot encoder (the encoder value when the wheel is oriented forward). Currently this information is encoded in `src/VelocityPlatformController.cpp` line 101 - 115 in the following format. 
+The controller needs to know the location of the wheels in the body fixed frame of the platform as well as the offset of their pivot encoder (the encoder value when the wheel is oriented forward). This information should be included in the YAML configuration file in the following manner:
 
 ```
-wheel_params_[0].pivot_position.x = 0.175f;
-wheel_params_[0].pivot_position.y = 0.1605f;
-wheel_params_[0].pivot_offset = -2.5f;
-
+wheel0:
+  ethercat_number: 6
+  x: 0.175
+  y: 0.1605
+  a: 3.14
+  reverse_velocity: 1
 ```
-Please adjust the array of the wheels with the correct number and location of the wheels on your platform. The next update will allow to put these values into a configuration file. 
+
+Please adjust the list of wheels with the correct number and location of the wheels on your platform. `wheel0` refers to the first wheel, starting counting with zero. The `ethercat_number` is the EtherCAT slave number of that wheel. `x` and `y` are the coordinates of the wheels center according to the fixed frame of the platform. `a` is the offset of pivot encoder in rad. The flag `reverse_velocity` should be set to 1 if the wheels are mounted in a way that giving a forward velocity would drive the robot backwards.
 
 
 ### Interface
