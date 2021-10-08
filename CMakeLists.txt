@@ -53,10 +53,12 @@ ENDIF("$ENV{SUDO_COMMAND}" STREQUAL "")
 add_subdirectory(src/soem)
 
 add_executable(platform_driver
+	src/EtherCATModule.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
 	src/Utils.cpp
 	src/VelocityPlatformController.cpp
+	src/modules/RobileMasterBattery.cpp
 )
 
 target_link_libraries(platform_driver

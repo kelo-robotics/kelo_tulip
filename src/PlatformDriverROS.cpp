@@ -43,6 +43,7 @@
 
 
 #include "kelo_tulip/PlatformDriver.h"
+#include "kelo_tulip/modules/RobileMasterBattery.h"
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
@@ -63,6 +64,7 @@
 kelo::PlatformDriver* driver;
 std::vector<kelo::WheelConfig> wheelConfigs;
 std::vector<kelo::WheelData> wheelData;
+kelo::RobileMasterBattery* robileMasterBattery = 0;
 
 ros::Publisher odomPublisher;
 ros::Publisher odomInitializedPublisher;
@@ -440,6 +442,13 @@ int main (int argc, char** argv)
 	int wheelIndex = 0;	
 
 	std::vector<kelo::EtherCATModule*> modules;
+
+	int robileMasterBatteryEthercatNumber = 0;
+	nh.param("robile_master_battery_ethercat_number", robileMasterBatteryEthercatNumber, 0);
+	if (robileMasterBatteryEthercatNumber > 0) {
+		robileMasterBattery = new kelo::RobileMasterBattery(robileMasterBatteryEthercatNumber);
+		modules.push_back(robileMasterBattery);
+	}
 
 	std::string device;
 	int nWheelsMaster;
