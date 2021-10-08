@@ -58,9 +58,10 @@ extern "C" {
 
 namespace kelo {
 
-PlatformDriver::PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs,
-                               std::vector<WheelData>* wheelData, int firstWheel, int nWheels)
-	: wheelConfigs(wheelConfigs)
+PlatformDriver::PlatformDriver(std::string device, std::vector<EtherCATModule*> modules,
+			std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int firstWheel, int nWheels)
+	: modules(modules)
+	, wheelConfigs(wheelConfigs)
 	, wheelData(wheelData)
     , firstWheel(firstWheel)
 	, nWheels(nWheels)
@@ -243,6 +244,12 @@ bool PlatformDriver::initEthercat() {
 			std::cout << "EtherCAT slave #" << i << " has wrong id: " << ecx_slave[slave].eep_id << std::endl;
 			return false;
 		}
+	}
+
+	for (unsigned int i = 0; i < modules.size(); i++) {
+		bool ok = modules[i]->initEtherCAT(ecx_slave, ecx_slavecount);
+		if (!ok)
+			return false;
 	}
 
 	std::cout << ecx_slavecount << " EtherCAT slaves found and configured.\n";
@@ -502,6 +509,11 @@ static int lastWkc = 0;
 				doStop();
 			else if (state == DRIVER_STATE_ACTIVE)
 				doControl();
+		}
+
+		for (unsigned int i = 0; i < modules.size(); i++) {
+			bool ok = modules[i]->step();
+			// TODO react if not ok
 		}
 
 		//send and receive data from ethercat

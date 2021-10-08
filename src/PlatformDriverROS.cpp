@@ -439,6 +439,8 @@ int main (int argc, char** argv)
 	// read config and create driver
 	int wheelIndex = 0;	
 
+	std::vector<kelo::EtherCATModule*> modules;
+
 	std::string device;
 	int nWheelsMaster;
 	bool ok = nh.getParam("device", device);
@@ -448,7 +450,7 @@ int main (int argc, char** argv)
 	bool hasNumWheel = nh.getParam("num_wheels", nWheelsMaster);
     int firstWheel = 0;
 
-	driver = new kelo::PlatformDriver(device, &wheelConfigs, &wheelData, firstWheel, nWheelsMaster);
+	driver = new kelo::PlatformDriver(device, modules, &wheelConfigs, &wheelData, firstWheel, nWheelsMaster);
 
 	wheelIndex += nWheelsMaster;
 

@@ -47,6 +47,7 @@
 
 extern "C" {
 #include "kelo_tulip/soem/ethercattype.h"
+#include "kelo_tulip/EtherCATModule.h"
 #include "kelo_tulip/KeloDriveAPI.h"
 
 #include "nicdrv.h"
@@ -94,8 +95,8 @@ enum DriverError {
 
 class PlatformDriver {
 public:
-    PlatformDriver(std::string device, std::vector<WheelConfig>* wheelConfigs,
-                   std::vector<WheelData>* wheelData, int firstWheel, int nWheels);
+	PlatformDriver(std::string device, std::vector<EtherCATModule*> modules,
+		std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int firstWheel, int nWheels);
 	virtual ~PlatformDriver();
 
 	bool initEthercat();
@@ -173,6 +174,8 @@ protected:
 	ecx_redportt ecx_redport;
 	ecx_contextt ecx_context;
 	
+	std::vector<EtherCATModule*> modules;
+
 	char IOmap[4096];
 	std::string device;
 	bool ethercatInitialized;
