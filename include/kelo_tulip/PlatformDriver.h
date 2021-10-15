@@ -58,7 +58,7 @@ extern "C" {
 #include "kelo_tulip/soem/ethercatdc.h"
 #include "kelo_tulip/soem/ethercatprint.h"
 }
-#include "kelo_tulip/VelocityPlatformController.h"
+#include "kelo_tulip/VelocityPlatformControllerWithAcceleration.h"
 #include "kelo_tulip/Utils.h"
 #include "kelo_tulip/WheelConfig.h"
 #include <boost/thread.hpp>
@@ -226,7 +226,7 @@ protected:
 
 private:
 	PlatformDriver(const PlatformDriver&);
-    VelocityPlatformController velocityPlatformController;
+	VelocityPlatformControllerWithAcceleration velocityPlatformController;
 };
 
 } //namespace kelo

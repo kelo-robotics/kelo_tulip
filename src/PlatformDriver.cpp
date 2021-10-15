@@ -738,6 +738,9 @@ void PlatformDriver::doControl() {
 	rxdata.limit2_n = -currentDrive;
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
+
+	// update desired velocity of platform, based on target velocity and veloity ramps
+	velocityPlatformController.calculatePlatformRampedVelocities();
 	
 	for (size_t i = firstWheel; i < firstWheel + nWheels; i++) {
 		txpdo1_t* wheel_data = getProcessData((*wheelConfigs)[i].ethercatNumber);

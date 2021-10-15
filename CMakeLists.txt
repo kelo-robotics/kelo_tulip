@@ -58,6 +58,7 @@ add_executable(platform_driver
 	src/PlatformDriverROS.cpp
 	src/Utils.cpp
 	src/VelocityPlatformController.cpp
+	src/VelocityPlatformControllerWithAcceleration.cpp
 	src/modules/RobileMasterBattery.cpp
 )
 
