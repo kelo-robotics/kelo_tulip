@@ -53,6 +53,20 @@ namespace kelo
         platform_target_vel_.x = 0.0f;
         platform_target_vel_.y = 0.0f;
         platform_target_vel_.a = 0.0f;
+
+        platform_ramped_vel_.x = 0.0f;
+        platform_ramped_vel_.y = 0.0f;
+        platform_ramped_vel_.a = 0.0f;
+        
+        // set default limits
+        platform_limits_.max_vel_linear = 1.0;
+        platform_limits_.max_vel_angular = 1.0;
+        platform_limits_.max_acc_linear = 0.5;
+        platform_limits_.max_acc_angular = 0.8;
+        platform_limits_.max_dec_linear = 0.5;
+        platform_limits_.max_dec_angular = 0.8;
+        
+        first_ramping_call = true;
     }
 
     VelocityPlatformController::~VelocityPlatformController()
@@ -103,6 +117,82 @@ namespace kelo
         }
     }
 
+    void VelocityPlatformController::setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular)
+    {
+    	platform_limits_.max_vel_linear = max_vel_linear;
+    	platform_limits_.max_vel_angular = max_vel_angular;
+    }
+
+    void VelocityPlatformController::setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular)
+    {
+    	platform_limits_.max_acc_linear = max_acc_linear;
+    	platform_limits_.max_acc_angular = max_acc_angular;
+    }
+
+    void VelocityPlatformController::setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular)
+    {
+    	platform_limits_.max_dec_linear = max_dec_linear;
+    	platform_limits_.max_dec_angular = max_dec_angular;
+    }
+            
+    void VelocityPlatformController::calculatePlatformRampedVelocities()
+    {
+        boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+        	
+        // if this is called the first time, calculating time delta that way makes no sense
+        if (first_ramping_call) {
+            first_ramping_call = false;
+            time_last_ramping = now;
+            return;
+        }
+        	
+        float time_delta = (now - time_last_ramping).total_microseconds() / 1000000.0f;
+
+        // velocity ramps
+        if (platform_ramped_vel_.x >= 0) {
+            platform_ramped_vel_.x = Utils::clip(platform_target_vel_.x,
+                platform_ramped_vel_.x + time_delta * platform_limits_.max_acc_linear,
+                platform_ramped_vel_.x - time_delta * platform_limits_.max_dec_linear
+            );
+        } else {
+            platform_ramped_vel_.x = Utils::clip(platform_target_vel_.x,
+                platform_ramped_vel_.x + time_delta * platform_limits_.max_dec_linear,
+                platform_ramped_vel_.x - time_delta * platform_limits_.max_acc_linear
+            );
+        }
+
+        if (platform_ramped_vel_.y >= 0) {
+            platform_ramped_vel_.y = Utils::clip(platform_target_vel_.y,
+                platform_ramped_vel_.y + time_delta * platform_limits_.max_acc_linear,
+                platform_ramped_vel_.y - time_delta * platform_limits_.max_dec_linear
+            );
+        } else {
+            platform_ramped_vel_.y = Utils::clip(platform_target_vel_.y,
+                platform_ramped_vel_.y + time_delta * platform_limits_.max_dec_linear,
+                platform_ramped_vel_.y - time_delta * platform_limits_.max_acc_linear
+            );
+        }
+
+        if (platform_ramped_vel_.a >= 0) {
+            platform_ramped_vel_.a = Utils::clip(platform_target_vel_.a,
+                platform_ramped_vel_.a + time_delta * platform_limits_.max_acc_angular,
+                platform_ramped_vel_.a - time_delta * platform_limits_.max_dec_angular
+            );
+        } else {
+            platform_ramped_vel_.a = Utils::clip(platform_target_vel_.a,
+                platform_ramped_vel_.a + time_delta * platform_limits_.max_dec_angular,
+                platform_ramped_vel_.a - time_delta * platform_limits_.max_acc_angular
+            );
+        }
+        
+        // velocity limits
+        platform_ramped_vel_.x = Utils::clip(platform_ramped_vel_.x, platform_limits_.max_vel_linear, -platform_limits_.max_vel_linear);
+        platform_ramped_vel_.y = Utils::clip(platform_ramped_vel_.y, platform_limits_.max_vel_linear, -platform_limits_.max_vel_linear);
+        platform_ramped_vel_.a = Utils::clip(platform_ramped_vel_.a, platform_limits_.max_vel_angular, -platform_limits_.max_vel_angular);
+        	
+        time_last_ramping = now;
+    }
+
     void VelocityPlatformController::calculateWheelTargetVelocity(
             const size_t &wheel_index,
             const float &raw_pivot_angle,
@@ -113,7 +203,7 @@ namespace kelo
          * If this is not done, then the wheels pivot to face front of platform
          * even when the platform is commanded zero velocity.
          */
-        if ( platform_target_vel_.x == 0 && platform_target_vel_.y == 0 && platform_target_vel_.a == 0 )
+        if ( platform_ramped_vel_.x == 0 && platform_ramped_vel_.y == 0 && platform_ramped_vel_.a == 0 )
         {
             target_ang_vel_l = 0.0f;
             target_ang_vel_r = 0.0f;
@@ -148,10 +238,10 @@ namespace kelo
 
         /* velocity target vector at pivot position */
         Point2D target_vel_at_pivot;
-        target_vel_at_pivot.x = platform_target_vel_.x
-                                - (platform_target_vel_.a * wheel_param.pivot_position.y);
-        target_vel_at_pivot.y = platform_target_vel_.y
-                                + (platform_target_vel_.a * wheel_param.pivot_position.x);
+        target_vel_at_pivot.x = platform_ramped_vel_.x
+                                - (platform_ramped_vel_.a * wheel_param.pivot_position.y);
+        target_vel_at_pivot.y = platform_ramped_vel_.y
+                                + (platform_ramped_vel_.a * wheel_param.pivot_position.x);
 
         /* target pivot vector to angle */
         float target_pivot_angle = atan2(target_vel_at_pivot.y, target_vel_at_pivot.x);
@@ -167,10 +257,10 @@ namespace kelo
 
         /* target velocity vector at wheel position */
         Point2D target_vel_vec_l, target_vel_vec_r;
-        target_vel_vec_l.x = platform_target_vel_.x - (platform_target_vel_.a * position_l.y);
-        target_vel_vec_l.y = platform_target_vel_.y + (platform_target_vel_.a * position_l.x);
-        target_vel_vec_r.x = platform_target_vel_.x - (platform_target_vel_.a * position_r.y);
-        target_vel_vec_r.y = platform_target_vel_.y + (platform_target_vel_.a * position_r.x);
+        target_vel_vec_l.x = platform_ramped_vel_.x - (platform_ramped_vel_.a * position_l.y);
+        target_vel_vec_l.y = platform_ramped_vel_.y + (platform_ramped_vel_.a * position_l.x);
+        target_vel_vec_r.x = platform_ramped_vel_.x - (platform_ramped_vel_.a * position_r.y);
+        target_vel_vec_r.y = platform_ramped_vel_.y + (platform_ramped_vel_.a * position_r.x);
 
         /* differential correction speed to minimise pivot_error */
         float delta_vel = pivot_error * wheel_param.pivot_kp;
@@ -206,7 +296,8 @@ namespace kelo
         }
 
         out << "target_vel: " << controller.platform_target_vel_ << std::endl;
-        return out;
+        out << "ramped_vel: " << controller.platform_ramped_vel_ << std::endl;
+       return out;
     }
 
 } /* namespace kelo */

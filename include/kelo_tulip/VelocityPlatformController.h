@@ -49,6 +49,7 @@
 #include <kelo_tulip/Utils.h>
 #include <kelo_tulip/Structs.h>
 #include <kelo_tulip/WheelConfig.h>
+#include <boost/thread.hpp>
 #include <iostream>
 
 namespace kelo
@@ -63,6 +64,12 @@ namespace kelo
             virtual ~VelocityPlatformController();
 
             void initialise(const std::vector<WheelConfig>& wheel_configs);
+
+            void setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular);
+            void setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular);
+            void setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular);
+            
+            void calculatePlatformRampedVelocities();
 
             void calculateWheelTargetVelocity(const size_t &wheel_index,
                                               const float &pivot_angle,
@@ -81,7 +88,19 @@ namespace kelo
             std::vector<WheelParamVelocity> wheel_params_;
 
             Attitude2D platform_target_vel_;
+            Attitude2D platform_ramped_vel_;           
 
+        	  struct PlatformLimits {
+                float max_vel_linear;
+                float max_vel_angular;
+                float max_acc_linear;
+                float max_acc_angular;
+                float max_dec_linear;
+                float max_dec_angular;
+        	  } platform_limits_;
+
+        	  boost::posix_time::ptime time_last_ramping;
+        	  bool first_ramping_call;
     };
 
 } /* namespace kelo */
