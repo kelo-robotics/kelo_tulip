@@ -41,6 +41,7 @@
  *
  ******************************************************************************/
 
+#include <iostream>
 #include "kelo_tulip/modules/RobileMasterBattery.h"
 
 namespace kelo {
