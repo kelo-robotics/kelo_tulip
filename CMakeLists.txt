@@ -34,6 +34,7 @@ endif(WIN32)
 
 catkin_package(
 	INCLUDE_DIRS ${INCLUDE_DIRS} 
+	LIBRARIES tulip_velocity_controller
 )
 
 include_directories(
@@ -52,18 +53,27 @@ ENDIF("$ENV{SUDO_COMMAND}" STREQUAL "")
 
 add_subdirectory(src/soem)
 
+add_library(tulip_velocity_controller
+	src/Utils.cpp
+	src/VelocityPlatformController.cpp
+)
+
+target_link_libraries(tulip_velocity_controller
+	${catkin_LIBRARIES}
+	${Boost_LIBRARIES}
+)
+
 add_executable(platform_driver
 	src/EtherCATModule.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
-	src/Utils.cpp
-	src/VelocityPlatformController.cpp
 	src/modules/RobileMasterBattery.cpp
 )
 
 target_link_libraries(platform_driver
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
+	tulip_velocity_controller
+	${catkin_LIBRARIES}
+	${Boost_LIBRARIES}
 	soem
 	pthread
 )
