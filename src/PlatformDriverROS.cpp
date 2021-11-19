@@ -113,7 +113,7 @@ void readWheelConfig(const ros::NodeHandle& nh) {
 
 		kelo::WheelConfig config;
 		config.enable = true;
-		config.reverseVelocity = false;
+		config.reverseVelocity = true;
 		bool ok =		
 		     nh.getParam(groupName + "/ethercat_number", config.ethercatNumber)
 		  && nh.getParam(groupName + "/x", config.x)

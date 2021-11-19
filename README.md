@@ -1,6 +1,6 @@
 # KELO Tulip
 
-This package contains the *KELO Tulip* software. This software takes a velocity vector for the overall platform and converts it to commands for the individual KELO Drives of the platform. 
+This package contains the *KELO Tulip* software. This software takes a velocity vector for the overall platform and converts it to commands for the individual KELO Drives of the platform. It implements an EtherCAT master to communicate with the KELO Drives and provides a simple velocity controller that can be used on real robots as well as for simulation.
 
 ## KELO Drives and how to build a platform
 The [KELO Drive](https://www.kelo-robotics.com/technologies/#kelo-drives) is the patent pending novel drive concept for mobile robots developed by KELO robotics. These wheels can be attached to any rigid platform in order to transform it into a mobile robot. It can even be used to [robotize a container](https://www.kelo-robotics.com/customized-designs/#robotized-material-container). A few screws are enough.
@@ -18,6 +18,8 @@ For ROS it is enough to install the base system (for Noetic ros-noetic-ros-base)
 ```
 sudo apt install ros-noetic-tf
 ```
+
+If another ROS version is used, replace the term noetic accordingly in these commands.
 
 ## Installation
 
@@ -42,11 +44,7 @@ OR
 catkin build kelo_tulip -DUSE_SETCAP=ON
 ```
 
-**Note**: If you use this flag, you will be asked to input sudo password during
-the build process. It would look like the build is going on but you need to keep
-a lookout for `[sudo] password for <username>` in the output and enter the
-password as soon as this prompt is visible. If not, the build process will
-continue forever.
+**Note**: If you use this flag, you will be asked to input the sudo password during the build process. It might look like the build is going on but you need to lookout for `[sudo] password for <username>` in the output and enter the password after this prompt had appeared. If not, the build process will continue forever.
 
 ### Finding dynamic libraries
 
@@ -100,22 +98,114 @@ This setting must be adjusted to the network interface by which the KELO drives 
 
 #### Wheels
 
-The controller needs to know the location of the wheels in the body fixed frame of the platform as well as the offset of their pivot encoder (the encoder value when the wheel is oriented forward). This information should be included in the YAML configuration file in the following manner:
+The controller needs to know the number of wheels and their location in the body fixed frame of the platform as well as the offset of their pivot encoder (the encoder value when the wheel is oriented forward). This information should be included in the YAML configuration file in the following manner:
 
 ```
+num_wheels: 4
+
 wheel0:
   ethercat_number: 6
   x: 0.175
   y: 0.1605
   a: 3.14
-  reverse_velocity: 1
+
+wheel1:
+  ...
 ```
 
-Please adjust the list of wheels with the correct number and location of the wheels on your platform. `wheel0` refers to the first wheel, starting counting with zero. The `ethercat_number` is the EtherCAT slave number of that wheel. `x` and `y` are the coordinates of the wheels center according to the fixed frame of the platform. `a` is the offset of pivot encoder in rad. The flag `reverse_velocity` should be set to 1 if the wheels are mounted in a way that giving a forward velocity would drive the robot backwards.
+Please adjust the list of wheels with the correct number and location of the wheels on your platform. `wheel0` refers to the first wheel, starting counting with zero. The `ethercat_number` is the EtherCAT slave number of that wheel. The possible numbers can be seen from when starting kelo_tulip, it will print out information about all slaves found on the EtherCAT bus.
+
+The values `x` and `y` are the coordinates of the wheels center according to the fixed frame of the platform in meters. `a` is the offset of pivot encoder in rad. 
+
+### ROS Interfaces
+
+Currently the kelo_tulip software uses ROS as a middleware, subscribing resp. publishing to the following topics.
+
+#### /cmd_vel
+
+This topic accepts [`geometry_msgs/Twist`](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Twist.html) messages. Any motion software that creates a velocity vector for the platform and publishes `geometry_msgs/Twist` messages to the `cmd_vel` topic can be used. The ROS package [`move_base`](http://wiki.ros.org/move_base) is an example that conforms to that. 
 
 
-### Interface
+#### /joy
 
-Currently the software uses ROS as a middleware and is subscribed to the `cmd_vel` topic. This topic accepts [`geometry_msgs/Twist`](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Twist.html) messages. Any motion software that creates a velocity vector for the platform and publishes `geometry_msgs/Twist` messages to the `cmd_vel` topic can be used. The ROS package [`move_base`](http://wiki.ros.org/move_base) is an example that conforms to that. 
+By sending messages to the `/joy` topic the platform can be moved by a joypad. The [`joy` ROS package](http://wiki.ros.org/joy) can be used to send these messages via joypad. In the function `joyCallback()` in `PlatformDriverROS.cpp` is a simple translation between joystick input and platform velocity command.
 
-The platform can also be moved by a joypad. We recommend using the [`joy` ROS package](http://wiki.ros.org/joy).
+Note: For safety reasons joystick messages are only considered if the `RB` button on the joypad is pressed, resp. the joy button with index 5 is active. This makes it also possible to run it in parallel with other packages that already process joystick input, overriding their input as long as the `RB` button keeps being pressed.
+
+#### /odom and /tf
+
+On the topic `/odom` odometry data in form of [`nav_msgs/Odometry`](http://docs.ros.org/en/noetic/api/nav_msgs/html/msg/Odometry.html) are published. Each time the program is started, the position is reset to the origin.
+
+The same odometry data is published also on the topic `/tf` in the form of tf transform from the frame `base_link` to `odom`.
+
+#### /status
+
+On this topic an integer representing status information about the controller is published periodically in form of [`std_msgs::Int32`](https://docs.ros.org/en/api/std_msgs/html/msg/Int32.html) messages. The single bits of the number have the following meaning:
+
+| Bit       | Description                                                                                                                             |
+|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| 0x0001    | Status OK, EtherCAT communication and all drives are working properly.
+| 0x0100    | An unspecified error occured.
+| 0x0200    | Error detected in EtherCAT communcation because of wrong WKC value. Might be temporary communication loss or power off of one wheel.
+| 0x0400    | Timestamp of one KELO Drive did not increase as expected, probably it stopped communicating.
+| 0x0800    | One KELO Drive did not have the expected status bits set, probably it got deactivated for some reasons.
+
+
+### Velocity controller
+
+kelo_tulip includes a simple velocity controller to demonstrate the general principle how to command wheel velocities. It considers velocity and acceleration limits for the platform. Being velocity based it does not allow for the compliant motion of the platform. It is rather meant as a guideline how own controllers can be developed. The controller itself is implemented as a C++ class and does not have any dependencies on ROS. 
+
+The concept of this simple controller is as follows. For each drive a target velocity is computed that depends on the desired velocity for the whole platform and the mounting position of the drive on the platform. The velocity of the individual wheel determines which pivot angle it should have. This pivot angle must be achieved by rotating the wheel around its center. This can be done by moving the left and right hubwheel with the same speed in opposite directions; similar to like a robot with differential drive would rotate around its center. In addition the linear motion of the drive can be achieved by giving the left and right hubwheel the same speed in the same direction. Just overlaying both parts, speeds in opposite direction for pivot-rotation and speeds in same direction for linear motion, will lead to the desired overall motion of the platform.
+
+The crucial part here is that each drive is handled on its own, separately from the others. This makes the whole approach very modular and does not cause any issues when more wheels are added or their mounting locations are changed. A flaw of this simple approach is the tendency to give already a forward motion if the wheels do not point yet into the correct orientation. If different wheels then start to move into different directions, the result on the platform can be very suboptimal. One possible solution is to delay giving forward velocities until all wheels are oriented more or less correctly. This can increase the stability of the motion, but also make maneuvers slower, and for the sake of simplicitiy was not done in the provided example controller.
+
+The controller can be found in the file `src/VelocityPlatformController.cpp`. The main functions are the following:
+
+#### VelocityPlatformController()
+
+The constructor initializes several variables, there are in particular:
+
+- `platform_target_vel_`: A struct with `x`, `y`, and `a` members to set the target values as requested by the external application
+- `platform_ramped_vel_`: A struct with `x`, `y`, and `a` members to set velocities that acceleration limits into account
+- `platform_limits_`: A struct with minimum and maximal settings for velocity, acceleration and deceleration
+
+#### setPlatformTargetVelocity()
+
+Called to set the desired platform velocity in x, y, and rotational direction.
+
+#### initialise()
+
+This function is called with a configuration setting for each wheel, in particular containing the location of each wheel in the platform's coordinate center.
+
+#### calculatePlatformRampedVelocities()
+
+This function ramps up or down the current velocity setpoints according to the acceleration limits and the platform's target velocities. Each dimension is considered separately from the others.
+
+
+#### calculateWheelTargetVelocity()
+
+This is the main function that computes the setpoint for the left and right hub wheels of each drive. It must be called once for each drive at each step. The computation consists of the following main steps:
+
+1. Determine the x and y position of each (left and right) hub wheel relative to the platform's center.
+2. Calculate the velocity this wheel unit should have at its pivot position, i.e. between the left and right hub wheel.
+3. Calculate the target pivot angle based on the wheel velocity.
+4. Apply a simple P-controller to minimize the error between measured pivot angle and target pivot angle.
+5. Calculate the single hubwheel velocity based on the pivot-controller result and the target velcoity of the drive.
+
+The result is the setpoints for the left and right hubwheel, which can then send to the real KELO drive.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

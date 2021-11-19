@@ -189,7 +189,7 @@ namespace kelo
         platform_ramped_vel_.x = Utils::clip(platform_ramped_vel_.x, platform_limits_.max_vel_linear, -platform_limits_.max_vel_linear);
         platform_ramped_vel_.y = Utils::clip(platform_ramped_vel_.y, platform_limits_.max_vel_linear, -platform_limits_.max_vel_linear);
         platform_ramped_vel_.a = Utils::clip(platform_ramped_vel_.a, platform_limits_.max_vel_angular, -platform_limits_.max_vel_angular);
-        	
+      	
         time_last_ramping = now;
     }
 
