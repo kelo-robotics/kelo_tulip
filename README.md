@@ -192,7 +192,8 @@ This is the main function that computes the setpoint for the left and right hub 
 4. Apply a simple P-controller to minimize the error between measured pivot angle and target pivot angle.
 5. Calculate the single hubwheel velocity based on the pivot-controller result and the target velcoity of the drive.
 
-The result is the setpoints for the left and right hubwheel, which can then send to the real KELO drive.
+The result is the setpoints for the left and right hubwheel, which can then be sent to the real KELO drive.
+
 
 
 
