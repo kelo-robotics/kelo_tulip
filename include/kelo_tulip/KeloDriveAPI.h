@@ -104,6 +104,7 @@ typedef struct PACKED{
   float			gyro_z;				// IMU gyro Z-axis in rad/s
   float			temperature_imu;	// IMU temperature in K	
   float			pressure;			// barometric pressure in Pa absolute
+  float			current_in;			// current input
 }txpdo1_t;
 
 /* SMARTWHEEL SETPOINT MODES
