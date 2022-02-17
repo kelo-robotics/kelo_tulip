@@ -108,6 +108,7 @@ struct __attribute__((packed)) RobileMasterBatteryProcessDataOutput {
   uint32_t      Command1;
   uint32_t      Command2;
   uint16_t      Shutdown;
+  uint16_t      PwrDeviceId;
 };
 
 } // namespace kelp
