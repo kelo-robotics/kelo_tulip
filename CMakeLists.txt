@@ -65,9 +65,11 @@ target_link_libraries(tulip_velocity_controller
 
 add_executable(platform_driver
 	src/EtherCATModule.cpp
+	src/EtherCATModuleROS.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
 	src/modules/RobileMasterBattery.cpp
+	src/modules/RobileMasterBatteryROS.cpp
 )
 
 target_link_libraries(platform_driver

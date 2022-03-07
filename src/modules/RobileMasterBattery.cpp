@@ -56,6 +56,8 @@ RobileMasterBattery::RobileMasterBattery(int slaveNumber) : EtherCATModule() {
 	robileEnablePump = false;
 	robileEnableDock = false;
 	robileEnableUndock = false;
+	
+	voltage = 0;
 }
 
 RobileMasterBattery::~RobileMasterBattery() {
@@ -72,7 +74,7 @@ bool RobileMasterBattery::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount
 		std::cout << "Found only " << ecx_slavecount << " EtherCAT slaves, but config requires at least " << slaveNumber << std::endl; 
 		return false;
 	}
-	if (ecx_slaves[slaveNumber].eep_id != 34603264 && ecx_slaves[slaveNumber].eep_id != 0) {
+	if (ecx_slaves[slaveNumber].eep_id != 34603264 || ecx_slaves[slaveNumber].eep_id != 34603265 && ecx_slaves[slaveNumber].eep_id != 0) {
 		std::cout << "EtherCAT slave #" << slaveNumber << " has wrong id: " << ecx_slaves[slaveNumber].eep_id << std::endl;
 		return false;
 	}
@@ -85,6 +87,8 @@ bool RobileMasterBattery::step() {
 		return false;
 
  	RobileMasterBatteryProcessDataInput* input = (RobileMasterBatteryProcessDataInput*) ecx_slaves[slaveNumber].inputs;
+	
+	voltage = input->bmsm_Voltage;
 
 	// debug output
 	//static int istep = 0;
@@ -178,6 +182,9 @@ void RobileMasterBattery::stopCharge() {
 	robileCharge = false;
 }
 
+float RobileMasterBattery::getVoltage() {
+	return voltage;
+}
 
 
 } //namespace kelo

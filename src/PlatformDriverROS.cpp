@@ -43,7 +43,7 @@
 
 
 #include "kelo_tulip/PlatformDriver.h"
-#include "kelo_tulip/modules/RobileMasterBattery.h"
+#include "kelo_tulip/modules/RobileMasterBatteryROS.h"
 #include <ros/ros.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
@@ -64,7 +64,7 @@
 kelo::PlatformDriver* driver;
 std::vector<kelo::WheelConfig> wheelConfigs;
 std::vector<kelo::WheelData> wheelData;
-kelo::RobileMasterBattery* robileMasterBattery = 0;
+std::vector<kelo::EtherCATModuleROS*> rosModules;
 
 ros::Publisher odomPublisher;
 ros::Publisher odomInitializedPublisher;
@@ -414,6 +414,10 @@ void publishAll(const ros::TimerEvent&) {
 		
 		//publish IMU data
 		publishIMU();
+		
+		// step through all modules
+		for (size_t i = 0; i < rosModules.size(); i++)
+			rosModules[i]->step();
 }
 
 int main (int argc, char** argv)
@@ -441,13 +445,16 @@ int main (int argc, char** argv)
 	// read config and create driver
 	int wheelIndex = 0;	
 
-	std::vector<kelo::EtherCATModule*> modules;
-
 	int robileMasterBatteryEthercatNumber = 0;
 	nh.param("robile_master_battery_ethercat_number", robileMasterBatteryEthercatNumber, 0);
-	if (robileMasterBatteryEthercatNumber > 0) {
-		robileMasterBattery = new kelo::RobileMasterBattery(robileMasterBatteryEthercatNumber);
-		modules.push_back(robileMasterBattery);
+	if (robileMasterBatteryEthercatNumber > 0) {	
+//		robileMasterBattery = new kelo::RobileMasterBattery(robileMasterBatteryEthercatNumber);
+//		modules.push_back(robileMasterBattery);
+		kelo::EtherCATModuleROS* module = new kelo::RobileMasterBatteryROS();
+		if (!module->init(nh))
+			exit(-1);
+			
+		rosModules.push_back(module);		
 	}
 
 	std::string device;
@@ -458,6 +465,10 @@ int main (int argc, char** argv)
 		
 	bool hasNumWheel = nh.getParam("num_wheels", nWheelsMaster);
     int firstWheel = 0;
+
+	std::vector<kelo::EtherCATModule*> modules;
+	for (size_t i = 0; i < rosModules.size(); i++)
+		modules.push_back(rosModules[i]->getEtherCATModule());
 
 	driver = new kelo::PlatformDriver(device, modules, &wheelConfigs, &wheelData, firstWheel, nWheelsMaster);
 
@@ -543,6 +554,9 @@ int main (int argc, char** argv)
 
 	ros::Timer timer = nh.createTimer(ros::Duration(0.05), publishAll);
 	ros::spin();
+
+	for (size_t i = 0; i < rosModules.size(); i++)
+		delete rosModules[i];
 
 	ros::shutdown();
 	return 0;
