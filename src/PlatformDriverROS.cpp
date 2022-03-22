@@ -445,13 +445,52 @@ int main (int argc, char** argv)
 	// read config and create driver
 	int wheelIndex = 0;	
 
+	// create modules
+	XmlRpc::XmlRpcValue modulesXML;
+	std::string configModulesTag = "modules";
+	nh.getParam(configModulesTag, modulesXML);
+	if (modulesXML.getType() == XmlRpc::XmlRpcValue::TypeStruct)	{
+		// iterate through configs for all modules
+		for (XmlRpc::XmlRpcValue::const_iterator it = modulesXML.begin(); it != modulesXML.end(); ++it) {
+			if (it->second.getType() != XmlRpc::XmlRpcValue::TypeStruct)	{
+				std::cout << "Error: configuration for module " << it->first << " cannot be read." << std::endl;
+				exit(-1);
+			}
+
+			std::string moduleName = it->first;
+			std::string moduleType = it->second["type"];
+			//std::cout << "Add module " << moduleType << std::endl;
+
+			// Instantiate and configure module
+			// Module types are fixed here, could be done by factory pattern later 
+			kelo::EtherCATModuleROS* module = NULL;
+			if (moduleType == "robile_master_battery") {
+				module = new kelo::RobileMasterBatteryROS();
+			} // no other modules so far
+
+			if (!module) {
+				// If module type was not found, exit with error
+				std::cout << "Unknown module type: " << moduleType << std::endl;
+				exit(-1);
+			}
+
+			// Exit program if module cannot be initialized.
+			// Expect an error message from inside the module.
+			if (!module->init(nh, configModulesTag + "/" + moduleName + "/"))
+				exit(-1);
+
+			rosModules.push_back(module);
+		}
+	}
+
+	// legacy config mode for master battery
 	int robileMasterBatteryEthercatNumber = 0;
 	nh.param("robile_master_battery_ethercat_number", robileMasterBatteryEthercatNumber, 0);
 	if (robileMasterBatteryEthercatNumber > 0) {	
 //		robileMasterBattery = new kelo::RobileMasterBattery(robileMasterBatteryEthercatNumber);
 //		modules.push_back(robileMasterBattery);
 		kelo::EtherCATModuleROS* module = new kelo::RobileMasterBatteryROS();
-		if (!module->init(nh))
+		if (!module->init(nh, ""))
 			exit(-1);
 			
 		rosModules.push_back(module);		

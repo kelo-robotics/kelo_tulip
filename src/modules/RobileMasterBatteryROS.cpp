@@ -55,13 +55,17 @@ RobileMasterBatteryROS::RobileMasterBatteryROS() : EtherCATModuleROS()
 RobileMasterBatteryROS::~RobileMasterBatteryROS() {
 }
 
-bool RobileMasterBatteryROS::init(ros::NodeHandle& nh) {
+bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	// get EtherCAT slave number
 	int ethercatNumber = 0;
-	nh.param("robile_master_battery_ethercat_number", ethercatNumber, 0);
+	nh.param(configPrefix + "ethercat_number", ethercatNumber, 0);
 	if (!ethercatNumber > 0) {
-		std::cerr << "EtherCAT number for robile master battery not set." << std::endl;
-		return false;
+		// Try deprecated alternative method
+		nh.param("robile_master_battery_ethercat_number", ethercatNumber, 0);
+		if (!ethercatNumber > 0) {
+			std::cerr << "EtherCAT number for robile master battery not set." << std::endl;
+			return false;
+		}
 	}
 
 	// create EtherCAT module

@@ -59,7 +59,7 @@ public:
 	RobileMasterBatteryROS();
 	virtual ~RobileMasterBatteryROS();
 
-	virtual bool init(ros::NodeHandle& nh);
+	virtual bool init(ros::NodeHandle& nh, std::string configPrefix);
 
 	virtual bool step();
 

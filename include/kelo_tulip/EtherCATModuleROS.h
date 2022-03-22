@@ -64,7 +64,7 @@ public:
 
 	//! Initialize this module, must be overridden.
 	//! Returns true if module could be successfully initialized.
-	virtual bool init(ros::NodeHandle& nh) = 0;
+	virtual bool init(ros::NodeHandle& nh, std::string configPrefix) = 0;
 
 	//! Function that is continously called by ROS main loop to publish or process data.
 	//! Returns true if module can continue to run.
