@@ -485,7 +485,9 @@ static int lastWkc = 0;
 			processData[i] = *getProcessData((*wheelConfigs)[i].ethercatNumber);
 		
 		// TODO check if should take timestamp differently, or from each wheel separately
-		current_ts = processData[0].sensor_ts; // TODO: atleast use firstWheel
+		if (nWheels > 0)
+			current_ts = processData[0].sensor_ts; // TODO: atleast use firstWheel
+
 		threadPhase = 7;
 	
 		if (step > 10) // TODO check

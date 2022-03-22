@@ -424,11 +424,14 @@ int main (int argc, char** argv)
 {
 	ros::init (argc, argv, "platform_driver");
 	ros::NodeHandle nh("~");
-	
-	nh.getParam("num_wheels", nWheels);
-	
-	if (nWheels == 0) {
+
+	if (!nh.getParam("num_wheels", nWheels)) {
 		ROS_ERROR("Missing number of wheels in config file");
+		return -1;
+	}
+	
+	if (nWheels < 0) {
+		ROS_ERROR("Invalid number of wheels in config file");
 		return -1;
 	}
 
