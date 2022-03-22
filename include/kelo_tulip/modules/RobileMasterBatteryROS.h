@@ -63,6 +63,8 @@ public:
 
 	virtual bool step();
 
+	virtual std::string getType();
+
 	virtual EtherCATModule* getEtherCATModule();
 	
 protected:

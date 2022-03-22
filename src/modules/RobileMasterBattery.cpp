@@ -69,12 +69,12 @@ bool RobileMasterBattery::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount
 	if (!(slaveNumber > 0))
 		return false;
 		
-	std::cout << "Robile Master Battery is slave #" << slaveNumber << std::endl; 
+	std::cout << "xxxxxxxxxxxxRobile Master Battery is slave #" << slaveNumber << std::endl; 
 	if (slaveNumber > ecx_slavecount) { // slaves start index 1
 		std::cout << "Found only " << ecx_slavecount << " EtherCAT slaves, but config requires at least " << slaveNumber << std::endl; 
 		return false;
 	}
-	if (ecx_slaves[slaveNumber].eep_id != 34603264 || ecx_slaves[slaveNumber].eep_id != 34603265 && ecx_slaves[slaveNumber].eep_id != 0) {
+	if (ecx_slaves[slaveNumber].eep_id != 34603264 && ecx_slaves[slaveNumber].eep_id != 34603265 && ecx_slaves[slaveNumber].eep_id != 0) {
 		std::cout << "EtherCAT slave #" << slaveNumber << " has wrong id: " << ecx_slaves[slaveNumber].eep_id << std::endl;
 		return false;
 	}

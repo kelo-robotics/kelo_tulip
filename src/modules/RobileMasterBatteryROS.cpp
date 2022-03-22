@@ -85,6 +85,10 @@ bool RobileMasterBatteryROS::step() {
 	return true;
 }
 
+std::string RobileMasterBatteryROS::getType() {
+	return "robile_master_battery";
+};
+
 EtherCATModule* RobileMasterBatteryROS::getEtherCATModule() {
 	return battery;
 }

@@ -70,6 +70,9 @@ public:
 	//! Returns true if module can continue to run.
 	virtual bool step();
 
+	//! Return the type of this module as string.
+	virtual std::string getType() = 0;
+
 	//! Return internal EtherCAT module, must be overridden.
 	virtual EtherCATModule* getEtherCATModule() = 0;
 
