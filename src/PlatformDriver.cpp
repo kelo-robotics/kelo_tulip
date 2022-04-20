@@ -543,10 +543,12 @@ txpdo1_t* PlatformDriver::getProcessData(int slave) {
 }
 
 std::vector<double> PlatformDriver::getEncoderValue(int idx) {
-	if (idx < 0 || idx >= nWheels)
+	if (idx < 0 || idx >= nWheels) {
 		std::cout << "Failed to return encoder value. Encoder index does not match" << std::endl;
-	else
-		return sum_encoder[idx];
+		return std::vector<double>();
+	}
+	
+	return sum_encoder[idx];
 }
 
 void PlatformDriver::setProcessData(int slave, rxpdo1_t* data) {
