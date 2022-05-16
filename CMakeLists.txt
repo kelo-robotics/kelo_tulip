@@ -64,6 +64,7 @@ target_link_libraries(tulip_velocity_controller
 )
 
 add_executable(platform_driver
+	src/EtherCATMaster.cpp
 	src/EtherCATModule.cpp
 	src/EtherCATModuleROS.cpp
 	src/PlatformDriver.cpp
