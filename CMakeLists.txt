@@ -34,7 +34,7 @@ endif(WIN32)
 
 catkin_package(
 	INCLUDE_DIRS ${INCLUDE_DIRS} 
-	LIBRARIES tulip_velocity_controller
+	LIBRARIES tulip_velocity_controller tulip_library soem
 )
 
 include_directories(
@@ -63,23 +63,30 @@ target_link_libraries(tulip_velocity_controller
 	${Boost_LIBRARIES}
 )
 
-add_executable(platform_driver
+add_library(tulip_library
 	src/EtherCATMaster.cpp
 	src/EtherCATModule.cpp
 	src/EtherCATModuleROS.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
-	src/TulipMain.cpp
 	src/modules/RobileMasterBattery.cpp
 	src/modules/RobileMasterBatteryROS.cpp
 )
 
-target_link_libraries(platform_driver
+target_link_libraries(tulip_library
 	tulip_velocity_controller
 	${catkin_LIBRARIES}
 	${Boost_LIBRARIES}
-	soem
 	pthread
+)
+
+add_executable(platform_driver
+	src/TulipMain.cpp
+)
+
+target_link_libraries(platform_driver
+	tulip_library
+	soem
 )
 
 IF(USE_SETCAP)
@@ -88,7 +95,7 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver
+install(TARGETS platform_driver tulip_library tulip_velocity_controller soem
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
