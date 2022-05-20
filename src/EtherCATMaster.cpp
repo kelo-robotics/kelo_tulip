@@ -44,18 +44,6 @@
 #include "kelo_tulip/EtherCATMaster.h"
 #include <iostream>
 
-extern "C" {
-#include "kelo_tulip/soem/ethercat.h"
-#include "kelo_tulip/soem/ethercattype.h"
-#include "nicdrv.h"
-#include "kelo_tulip/soem/ethercatbase.h"
-#include "kelo_tulip/soem/ethercatmain.h"
-#include "kelo_tulip/soem/ethercatconfig.h"
-#include "kelo_tulip/soem/ethercatcoe.h"
-#include "kelo_tulip/soem/ethercatdc.h"
-#include "kelo_tulip/soem/ethercatprint.h"
-}
-
 namespace kelo {
 
 EtherCATMaster::EtherCATMaster(std::string device, std::vector<EtherCATModule*> modules)
@@ -213,7 +201,6 @@ void EtherCATMaster::reconnectSlave(int slave) {
 
 void EtherCATMaster::ethercatHandler() {
 	int step = 0;
-	threadPhase = 1;
 	int wkc = 0;
 	long timeToWait = 0;
 	boost::posix_time::ptime startTime = boost::posix_time::microsec_clock::local_time();
@@ -223,9 +210,10 @@ void EtherCATMaster::ethercatHandler() {
 	long int communicationErrors = 0;
 	long int maxCommunicationErrors = 100;
 	int timeTillNextEthercatUpdate = 1000; //usec
+
+	ecx_send_processdata(&ecx_context);
 	
 	while (!stopThread) {
-		threadPhase = 2;
 		pastTime = boost::posix_time::microsec_clock::local_time() - startTime;
 		timeToWait = timeTillNextEthercatUpdate - pastTime.total_microseconds();
 
@@ -241,7 +229,7 @@ void EtherCATMaster::ethercatHandler() {
 		}
 
 		// check for slave timeout errors
-		ecx_readstate(&ecx_context); // TODO check return code
+		ecx_readstate(&ecx_context);
 		/*
 		for (unsigned int i = 0; i < nWheels; i++) {
 			int slave = (*wheelConfigs)[i].ethercatNumber;
@@ -276,8 +264,6 @@ void EtherCATMaster::ethercatHandler() {
 			
 		startTime = boost::posix_time::microsec_clock::local_time();
 
-		threadPhase = 3;
-
 		wkc = ecx_receive_processdata(&ecx_context, ethercatTimeout);
 
 		if (wkc != expectedWKC) {
@@ -287,13 +273,11 @@ void EtherCATMaster::ethercatHandler() {
 		}
 		
 		if (wkc == 0) {
-			threadPhase = 4;
 			if (communicationErrors == 0) {
 				std::cout << "Receiving data failed" << std::endl;
 			}
 			communicationErrors++;
 		} else {
-			threadPhase = 5;
 			communicationErrors = 0;
 		}
 
@@ -304,11 +288,15 @@ void EtherCATMaster::ethercatHandler() {
 			break;
 		}
 
-		threadPhase = 6;
+		bool modulesOK = true;
+		for (unsigned int i = 0; i < modules.size() && modulesOK; i++)
+			modulesOK = modules[i]->step();
 
-		for (unsigned int i = 0; i < modules.size(); i++) {
-			bool ok = modules[i]->step();
-			// TODO react if not ok
+		if (!modulesOK) {
+			std::cout << "EtherCAT module failed, stopping EtherCAT communication." << std::endl;
+			closeEthercat();
+			stopThread = true;
+			break;
 		}
 
 		//send and receive data from ethercat
@@ -317,12 +305,9 @@ void EtherCATMaster::ethercatHandler() {
 			std::cout << "Sending process data failed" << std::endl;
 		}
 
-		if (ecx_iserror(&ecx_context))
-			std::cout << "there is an error in the soem driver" << std::endl;
-
-		// TODO if ((startTime - timeLastSetMsgBuffer).total_milliseconds() > 1000) {
-		// Stop robot due to timeout
-		// }
+		if (ecx_iserror(&ecx_context)) {
+			std::cout << "There is an error in the soem driver" << std::endl;
+		}
 		
 		step++;
 	}
@@ -330,15 +315,8 @@ void EtherCATMaster::ethercatHandler() {
 	std::cout << "Stopped EtherCAT thread" << std::endl;
 }
 
-int EtherCATMaster::getDriverStatus() {
-	int status = 0;
-
-	if (ethercatWkcError) {
-		//std::cout << "EtherCAT WKC error" << std::endl;
-		status |= 0x01; //DRIVER_ERROR_ETHERCAT_WKC;
-	}
-	
-	return status;
+bool EtherCATMaster::hasWkcError() {
+	return ethercatWkcError;
 }
 
 void EtherCATMaster::resetErrorFlags() {

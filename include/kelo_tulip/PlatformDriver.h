@@ -93,20 +93,18 @@ enum DriverError {
 	DRIVER_ERROR_SLIP = 0x2000
 };
 
-class PlatformDriver {
+class PlatformDriver : public EtherCATModule {
 public:
-	PlatformDriver(std::string device, std::vector<EtherCATModule*> modules,
-		std::vector<WheelConfig>* wheelConfigs, std::vector<WheelData>* wheelData, int firstWheel, int nWheels);
+	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
 	virtual ~PlatformDriver();
 
-	bool initEthercat();
-	void closeEthercat();
-	void pauseEthercat(int ms);
-	void printEthercatStatus();
-	void reconnectSlave(int slave);
+	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	bool step();
 
-	txpdo1_t* getProcessData(int slave);
-	void setProcessData(int slave, rxpdo1_t* data);
+	txpdo1_t* getWheelProcessData(unsigned int wheel);
+	void setWheelProcessData(unsigned int wheel, rxpdo1_t* data);
+
+	void reconnectSlave(int slave);
 
 	void setTargetVelocity(double vx, double vy, double va);
 
@@ -143,46 +141,25 @@ public:
 	std::vector<double> getEncoderValue(int idx);
 		
 protected:
-	void ethercatHandler();
 	int checkSmartwheelTimestamp();
 	void updateEncoders();
 	void updateSetpoints();
 	void doStop();
 	void doControl();
+
+	bool hasWheelStatusEnabled(unsigned int wheel);
+	bool hasWheelStatusError(unsigned int wheel);
 	void updateStatusError();
 
 	volatile DriverState state;
 	std::ofstream logfile;
 	bool canChangeActive;
 	bool showedMessageChangeActive;
+	int stepCount;
 
-	ec_slavet ecx_slave[EC_MAXSLAVE];
-	int ecx_slavecount;
-	ec_groupt ec_group[EC_MAXGROUP];
-	uint8 esibuf[EC_MAXEEPBUF];
-	uint32 esimap[EC_MAXEEPBITMAP];
-	ec_eringt ec_elist;
-	ec_idxstackT ec_idxstack;
-	ec_SMcommtypet ec_SMcommtype;
-	ec_PDOassignt ec_PDOassign;
-	ec_PDOdesct ec_PDOdesc;
-	ec_eepromSMt ec_SM;
-	ec_eepromFMMUt ec_FMMU;
-	boolean EcatError;
-	int64 ec_DCtime;			   
-	ecx_portt ecx_port;
-	ecx_redportt ecx_redport;
-	ecx_contextt ecx_context;
+	ec_slavet* ecx_slaves;
 	
 	std::vector<EtherCATModule*> modules;
-
-	char IOmap[4096];
-	std::string device;
-	bool ethercatInitialized;
-	boost::thread* ethercatThread;
-	volatile bool stopThread;
-	volatile int threadPhase;
-	volatile int pauseThreadMs;
 
 	std::vector<txpdo1_t> processData;
 	std::vector<txpdo1_t> lastProcessData;
@@ -198,8 +175,8 @@ protected:
 	volatile bool flagReconnectSlave;
 
 	int firstWheel, nWheels;
-	std::vector<WheelConfig>* wheelConfigs;
-	std::vector<WheelData>* wheelData;
+	std::vector<WheelConfig> wheelConfigs;
+	std::vector<WheelData> wheelData;
 
 	double wheelDistance;
 	double wheelDiameter;
@@ -220,8 +197,6 @@ protected:
 	double wheelsetpointmax;
 
 	volatile bool statusError;
-	volatile bool slipError;
-	volatile bool stallError;
 	volatile bool timestampError;
 
 private:

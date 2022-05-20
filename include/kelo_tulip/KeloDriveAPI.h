@@ -41,9 +41,10 @@
  *
  ******************************************************************************/
 
+#ifndef KELOTULIP_KELODRIVEAPI_H_
+#define KELOTULIP_KELODRIVEAPI_H_
 
 // processdata structures and global user defined types
-
 
 #define STAT1_ENABLED1          0x0001
 #define STAT1_ENABLED2          0x0002
@@ -169,3 +170,4 @@ typedef struct PACKED{
   uint64_t		timestamp;			// EtherCAT timestamp (ns) setpoint execution
 }rxpdo1_t;
 
+#endif // KELOTULIP_KELODRIVEAPI_H_

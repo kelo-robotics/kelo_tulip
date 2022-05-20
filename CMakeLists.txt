@@ -69,6 +69,7 @@ add_executable(platform_driver
 	src/EtherCATModuleROS.cpp
 	src/PlatformDriver.cpp
 	src/PlatformDriverROS.cpp
+	src/TulipMain.cpp
 	src/modules/RobileMasterBattery.cpp
 	src/modules/RobileMasterBatteryROS.cpp
 )

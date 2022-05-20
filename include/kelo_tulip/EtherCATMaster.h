@@ -75,11 +75,7 @@ public:
 	void printEthercatStatus();
 	void reconnectSlave(int slave);
 
-	txpdo1_t* getProcessData(int slave);
-	void setProcessData(int slave, rxpdo1_t* data);
-
-	int getDriverStatus();
-
+	bool hasWkcError();
 	void resetErrorFlags();
 
 protected:
