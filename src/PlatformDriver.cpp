@@ -457,10 +457,8 @@ void PlatformDriver::doStop() {
 	rxdata.setpoint2 = 0;
 	double totalDiffAngle = 0;
 
-	for (unsigned int i = 0; i < nWheels; i++) {
-		rxpdo1_t* ecData = (rxpdo1_t*) ecx_slaves[wheelConfigs[i].ethercatNumber].outputs;
-		*ecData = rxdata;
-	}
+	for (unsigned int i = 0; i < nWheels; i++)
+		setWheelProcessData(i, &rxdata);
 }
 
 void PlatformDriver::doControl() {
@@ -505,8 +503,8 @@ void PlatformDriver::doControl() {
 		/* send calculated target velocity values to EtherCAT */
 		rxdata.setpoint1 = setpoint1;
 		rxdata.setpoint2 = setpoint2;
-		rxpdo1_t* ecData = (rxpdo1_t*) ecx_slaves[wheelConfigs[i].ethercatNumber].outputs;
-		*ecData = rxdata;					
+		
+		setWheelProcessData(i, &rxdata);
 	}
 }
 

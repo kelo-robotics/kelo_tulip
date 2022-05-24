@@ -48,7 +48,6 @@
 extern "C" {
 #include "kelo_tulip/soem/ethercattype.h"
 #include "kelo_tulip/EtherCATModule.h"
-#include "kelo_tulip/KeloDriveAPI.h"
 
 #include "nicdrv.h"
 #include "kelo_tulip/soem/ethercatbase.h"
@@ -113,8 +112,6 @@ protected:
 	volatile int threadPhase;
 	volatile int pauseThreadMs;
 
-	std::vector<txpdo1_t> processData;
-	std::vector<txpdo1_t> lastProcessData;
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
 

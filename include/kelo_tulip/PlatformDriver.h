@@ -98,8 +98,8 @@ public:
 	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
 	virtual ~PlatformDriver();
 
-	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
-	bool step();
+	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	virtual bool step();
 
 	txpdo1_t* getWheelProcessData(unsigned int wheel);
 	void setWheelProcessData(unsigned int wheel, rxpdo1_t* data);
@@ -144,8 +144,8 @@ protected:
 	int checkSmartwheelTimestamp();
 	void updateEncoders();
 	void updateSetpoints();
-	void doStop();
-	void doControl();
+	virtual void doStop();
+	virtual void doControl();
 
 	bool hasWheelStatusEnabled(unsigned int wheel);
 	bool hasWheelStatusError(unsigned int wheel);
