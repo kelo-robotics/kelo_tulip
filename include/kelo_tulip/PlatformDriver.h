@@ -149,7 +149,7 @@ protected:
 
 	bool hasWheelStatusEnabled(unsigned int wheel);
 	bool hasWheelStatusError(unsigned int wheel);
-	void updateStatusError();
+	virtual void updateStatusError();
 
 	volatile DriverState state;
 	std::ofstream logfile;
