@@ -108,7 +108,7 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	// read all wheel configs
 	readWheelConfig(nh);
 
-	driver = new kelo::PlatformDriver(wheelConfigs, wheelData);
+	driver = createDriver();
 
 	// set driver control parameters		
 	double x;
@@ -215,6 +215,10 @@ std::string PlatformDriverROS::getType() {
 
 EtherCATModule* PlatformDriverROS::getEtherCATModule() {
 	return driver;
+}
+
+kelo::PlatformDriver* PlatformDriverROS::createDriver() {
+	return new kelo::PlatformDriver(wheelConfigs, wheelData);
 }
 
 

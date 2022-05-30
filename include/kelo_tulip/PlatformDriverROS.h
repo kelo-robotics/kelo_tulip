@@ -77,6 +77,8 @@ public:
 	virtual EtherCATModule* getEtherCATModule();
 
 protected:
+	virtual kelo::PlatformDriver* createDriver();
+	
 	void readWheelConfig(const ros::NodeHandle& nh);
 	void checkAndPublishSmartWheelStatus();
 	
