@@ -101,12 +101,12 @@ public:
 	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
 	virtual bool step();
 
+	virtual void setTargetVelocity(double vx, double vy, double va);
+
 	txpdo1_t* getWheelProcessData(unsigned int wheel);
 	void setWheelProcessData(unsigned int wheel, rxpdo1_t* data);
 
 	void reconnectSlave(int slave);
-
-	void setTargetVelocity(double vx, double vy, double va);
 
 	void setWheelDistance(double x);
 	void setWheelDiameter(double x);
