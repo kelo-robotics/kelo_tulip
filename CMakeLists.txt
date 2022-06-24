@@ -34,7 +34,7 @@ endif(WIN32)
 
 catkin_package(
 	INCLUDE_DIRS ${INCLUDE_DIRS} 
-	LIBRARIES tulip_velocity_controller tulip_library soem
+	LIBRARIES tulip_library tulip_velocity_controller soem
 )
 
 include_directories(
