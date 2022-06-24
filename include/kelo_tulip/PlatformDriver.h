@@ -81,7 +81,6 @@ enum DriverState {
 	DRIVER_STATE_READY = 0x02,
 	DRIVER_STATE_INIT = 0x04,
 	DRIVER_STATE_ERROR = 0x10,
-	DRIVER_STATE_TIMEOUT = 0x20
 };
 
 enum DriverError {
@@ -100,6 +99,11 @@ public:
 
 	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
 	virtual bool step();
+	
+	virtual bool stepInit();
+	virtual bool stepReady();
+	virtual bool stepActive();
+	virtual bool stepError();
 
 	virtual void setTargetVelocity(double vx, double vy, double va);
 

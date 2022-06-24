@@ -181,27 +181,42 @@ bool PlatformDriver::step() {
 	updateStatusError();
 	updateEncoders();
 
-	// in state init: wait and don't move until all wheels are enabled
-	if (state == DRIVER_STATE_INIT) {
-		doStop();
+	switch (state) {
+		case DRIVER_STATE_INIT:   return stepInit();
+		case DRIVER_STATE_READY:  return stepReady();
+		case DRIVER_STATE_ACTIVE: return stepActive();
+		case DRIVER_STATE_ERROR:  return stepError();
+		default: 
+			doStop();
+	}
 
-		bool ready = true;
-		for (unsigned int wheel = 0; wheel < nWheels; wheel++)
-			if (!hasWheelStatusEnabled(wheel) || hasWheelStatusError(wheel))
-				ready = false;
+	return true;
+}
+
+// in state init: wait and don't move until all wheels are enabled
+bool PlatformDriver::stepInit() {
+	doStop();
+
+	bool ready = true;
+	for (unsigned int wheel = 0; wheel < nWheels; wheel++)
+		if (!hasWheelStatusEnabled(wheel) || hasWheelStatusError(wheel))
+			ready = false;
+	
+	if (ready)
+		state = DRIVER_STATE_READY;
 		
-		if (ready)
-			state = DRIVER_STATE_READY;
-			
-		if (stepCount > 10 && !ready) {
-			std::cout << "Stopping platform driver, because wheels don't become ready." << std::endl;
-			return false;
-		}
-		
-		return true;
+	if (stepCount > 10 && !ready) {
+		std::cout << "Stopping platform driver, because wheels don't become ready." << std::endl;
+		return false;
 	}
 	
-	if (!statusError && state == DRIVER_STATE_READY) {
+	return true;
+}
+
+bool PlatformDriver::stepReady() {
+	doStop();
+
+	if (!statusError) {
 		if (canChangeActive)
 			state = DRIVER_STATE_ACTIVE;
 		else if (!showedMessageChangeActive) {
@@ -210,14 +225,19 @@ bool PlatformDriver::step() {
 		}		
 	}
 
-	if (state == DRIVER_STATE_READY)
-		doStop();
-	else if (state == DRIVER_STATE_ACTIVE)
-		doControl();
-
 	return true;
 }
 
+bool PlatformDriver::stepActive() {
+	doControl();
+	return true;
+}
+
+bool PlatformDriver::stepError() {
+	// could check some condition if error has been resolved and change to ready state
+	doStop();
+	return true;
+}
 
 void PlatformDriver::setTargetVelocity(double vx, double vy, double va) {
 	velocityPlatformController.setPlatformTargetVelocity(vx, vy, va);
