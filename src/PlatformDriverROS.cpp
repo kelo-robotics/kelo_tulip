@@ -43,6 +43,7 @@
 
 
 #include "kelo_tulip/PlatformDriverROS.h"
+#include "kelo_tulip/KeloDrivesInput.h"
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Joy.h>
@@ -157,6 +158,7 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	odomInitializedPublisher = nhGlobal.advertise<std_msgs::Empty>("odom_initialized", 10);
 //	timestampPublisher = nh.advertise<std_msgs::UInt64MultiArray>("timestamp", 10);
 	imuPublisher = nh.advertise<sensor_msgs::Imu>("imu", 10);
+	processDataInputPublisher = nh.advertise<kelo_tulip::KeloDrivesInput>("wheels_input", 10);
 	batteryPublisher = nh.advertise<std_msgs::Float32>("battery", 10);
 	errorPublisher = nh.advertise<std_msgs::Int32>("error", 10);
 	statusPublisher = nh.advertise<std_msgs::Int32>("status", 10);
@@ -200,6 +202,8 @@ bool PlatformDriverROS::step() {
 		}
 		valuesPublisher.publish(processDataValues);
 */
+
+	publishProcessDataInput();
 
 	publishBattery();
 
@@ -412,6 +416,57 @@ void PlatformDriverROS::createOdomToBaseLinkTransform(geometry_msgs::TransformSt
 	odom_trans.transform.translation.y = odomy;
 	odom_trans.transform.translation.z = 0.0;
 	odom_trans.transform.rotation = odom_quat;
+}
+
+void PlatformDriverROS::publishProcessDataInput() {
+	kelo_tulip::KeloDrivesInput msg;
+	for (int i = 0; i < nWheels; i++) {
+		txpdo1_t* swData = driver->getWheelProcessData(i);
+		kelo_tulip::KeloDriveInput wheel;
+		wheel.status1 = swData->status1;
+		wheel.status2 = swData->status2;
+		wheel.sensor_ts = swData->sensor_ts;
+		wheel.setpoint_ts = swData->setpoint_ts;
+		wheel.encoder_1 = swData->encoder_1;
+		wheel.velocity_1 = swData->velocity_1;
+		wheel.current_1_d = swData->current_1_d;
+		wheel.current_1_q = swData->current_1_q;
+		wheel.current_1_u = swData->current_1_u;
+		wheel.current_1_v = swData->current_1_v;
+		wheel.current_1_w = swData->current_1_w;
+		wheel.voltage_1 = swData->voltage_1;
+		wheel.voltage_1_u = swData->voltage_1_u;
+		wheel.voltage_1_v = swData->voltage_1_v;
+		wheel.voltage_1_w = swData->voltage_1_w;
+		wheel.temperature_1 = swData->temperature_1;
+		wheel.encoder_2 = swData->encoder_2;
+		wheel.velocity_2 = swData->velocity_2;
+		wheel.current_2_d = swData->current_2_d;
+		wheel.current_2_q = swData->current_2_q;
+		wheel.current_2_u = swData->current_2_u;
+		wheel.current_2_v = swData->current_2_v;
+		wheel.current_2_w = swData->current_2_w;
+		wheel.voltage_2 = swData->voltage_2;
+		wheel.voltage_2_u = swData->voltage_2_u;
+		wheel.voltage_2_v = swData->voltage_2_v;
+		wheel.voltage_2_w = swData->voltage_2_w;
+		wheel.temperature_2 = swData->temperature_2;
+		wheel.encoder_pivot = swData->encoder_pivot;
+		wheel.velocity_pivot = swData->velocity_pivot;
+		wheel.voltage_bus = swData->voltage_bus;
+		wheel.imu_ts = swData->imu_ts;
+		wheel.accel_x = swData->accel_x;
+		wheel.accel_y = swData->accel_y;
+		wheel.accel_z = swData->accel_z;
+		wheel.gyro_x = swData->gyro_x;
+		wheel.gyro_y = swData->gyro_y;
+		wheel.gyro_z = swData->gyro_z;
+		wheel.temperature_imu = swData->temperature_imu;
+		wheel.pressure = swData->pressure;
+		wheel.current_in = swData->current_in;
+		msg.wheels.push_back(wheel);
+	}
+	processDataInputPublisher.publish(msg);
 }
 
 void PlatformDriverROS::publishBattery() {

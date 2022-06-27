@@ -3,6 +3,7 @@ project(kelo_tulip)
 
 find_package(catkin REQUIRED COMPONENTS
 	roscpp
+	message_generation
 	geometry_msgs
 	nav_msgs
 	sensor_msgs
@@ -31,6 +32,16 @@ else(WIN32)
 		include/kelo_tulip/soem/oshw/linux
 	)
 endif(WIN32)
+
+add_message_files(
+	FILES
+		KeloDriveInput.msg
+		KeloDrivesInput.msg
+)
+
+generate_messages(
+	DEPENDENCIES std_msgs
+)
 
 catkin_package(
 	INCLUDE_DIRS ${INCLUDE_DIRS} 

@@ -87,7 +87,8 @@ protected:
 	void calculateRobotPose(double vx, double vy, double va);
 	void publishOdometry(double vx, double vy, double va);
 	void createOdomToBaseLinkTransform(geometry_msgs::TransformStamped& odom_trans);
-		
+
+	void publishProcessDataInput();
 	void publishBattery();
 	void publishIMU();
 
@@ -102,6 +103,7 @@ protected:
 	std::vector<kelo::WheelData> wheelData;
 	std::vector<kelo::EtherCATModuleROS*> wheelModules;
 
+	ros::Publisher processDataInputPublisher;
 	ros::Publisher odomPublisher;
 	ros::Publisher odomInitializedPublisher;
 	ros::Publisher mileagePublisher;
