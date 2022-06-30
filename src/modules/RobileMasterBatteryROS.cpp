@@ -104,7 +104,6 @@ void RobileMasterBatteryROS::callbackShutdown(const std_msgs::Int32& msg) {
 }
 
 void RobileMasterBatteryROS::callbackChargerStart(const std_msgs::Int32& msg) {
-std::cout << "..............start charge" << std::endl;
 	battery->startCharge();
 }
 
