@@ -76,6 +76,8 @@ bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix)
 	// setup publishers and subscribers
 	batteryPublisher = nh.advertise<std_msgs::Float32>(topicPrefix + "voltage", 10);
 	shutdownSubscriber = nh.subscribe(topicPrefix + "shutdown", 1, &RobileMasterBatteryROS::callbackShutdown, this);
+	chargerStartSubscriber = nh.subscribe("charger_start", 1, &RobileMasterBatteryROS::callbackChargerStart, this);
+	chargerStopSubscriber = nh.subscribe("charger_stop", 1, &RobileMasterBatteryROS::callbackChargerStop, this);
 
 	return true;
 }
@@ -99,6 +101,15 @@ EtherCATModule* RobileMasterBatteryROS::getEtherCATModule() {
 
 void RobileMasterBatteryROS::callbackShutdown(const std_msgs::Int32& msg) {
 	battery->shutdown(msg.data);
+}
+
+void RobileMasterBatteryROS::callbackChargerStart(const std_msgs::Int32& msg) {
+std::cout << "..............start charge" << std::endl;
+	battery->startCharge();
+}
+
+void RobileMasterBatteryROS::callbackChargerStop(const std_msgs::Int32& msg) {
+	battery->stopCharge();
 }
 
 } //namespace kelo

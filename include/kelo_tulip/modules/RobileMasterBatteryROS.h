@@ -69,11 +69,15 @@ public:
 	
 protected:
 	void callbackShutdown(const std_msgs::Int32& msg);
+	void callbackChargerStart(const std_msgs::Int32& msg);
+	void callbackChargerStop(const std_msgs::Int32& msg);
 
 	RobileMasterBattery* battery;
 	
 	ros::Publisher batteryPublisher;
 	ros::Subscriber shutdownSubscriber;
+	ros::Subscriber chargerStartSubscriber;
+	ros::Subscriber chargerStopSubscriber;
 		
 	std::string topicPrefix;
 };
