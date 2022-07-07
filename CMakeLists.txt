@@ -71,7 +71,6 @@ add_library(tulip_velocity_controller
 
 target_link_libraries(tulip_velocity_controller
 	${catkin_LIBRARIES}
-	${Boost_LIBRARIES}
 )
 
 add_library(tulip_library
@@ -87,8 +86,6 @@ add_library(tulip_library
 target_link_libraries(tulip_library
 	tulip_velocity_controller
 	${catkin_LIBRARIES}
-	${Boost_LIBRARIES}
-	pthread
 )
 
 add_executable(platform_driver
@@ -96,8 +93,10 @@ add_executable(platform_driver
 )
 
 target_link_libraries(platform_driver
+	${Boost_LIBRARIES}
 	tulip_library
 	soem
+	pthread
 )
 
 IF(USE_SETCAP)
