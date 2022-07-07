@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 	tf
 )
 
-#set(Boost_USE_STATIC_LIBS ON)
+set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost REQUIRED COMPONENTS thread)
 
 if(WIN32)
@@ -106,7 +106,7 @@ IF(USE_SETCAP)
   )
 endif(USE_SETCAP)
 
-install(TARGETS platform_driver tulip_library tulip_velocity_controller soem
+install(TARGETS platform_driver tulip_library tulip_velocity_controller
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
