@@ -531,7 +531,7 @@ int main (int argc, char** argv)
 //	timestampPublisher = nh.advertise<std_msgs::UInt64MultiArray>("timestamp", 10);
 	imuPublisher = nh.advertise<sensor_msgs::Imu>("imu", 10);
 	batteryPublisher = nh.advertise<std_msgs::Float32>("battery", 10);
-//	errorPublisher = nh.advertise<std_msgs::Int32>("error", 10);
+	errorPublisher = nh.advertise<std_msgs::Int32>("error", 10);
 	statusPublisher = nh.advertise<std_msgs::Int32>("status", 10);
 	ros::Subscriber joySubscriber = nh.subscribe("/joy", 1000, joyCallback);
 	ros::Subscriber cmdVelSubscriber = nh.subscribe("/cmd_vel", 1000, cmdVelCallback);
