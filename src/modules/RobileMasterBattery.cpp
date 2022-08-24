@@ -51,11 +51,14 @@ RobileMasterBattery::RobileMasterBattery(int slaveNumber) : EtherCATModule() {
 
 	ecx_slaves = 0;
 	
+	flagResetError = false;
 	flagShutdown = false;
 	robileCharge = false;
 	robileEnablePump = false;
 	robileEnableDock = false;
 	robileEnableUndock = false;
+
+	autoResetError = false;
 	
 	voltage = 0;
 }
@@ -102,14 +105,21 @@ bool RobileMasterBattery::step() {
 	data.Command1 = 0;
 	data.Command2 = 0;
 	data.Shutdown = 0;
+	data.PwrDeviceId = 0;
 	
 	if (flagShutdown)
 		data.Shutdown = 0x80;
 
 	boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
-	if (robileCharge) {
-		data.Command2 = 0x01;
-	} else if ( robileEnablePump ) {
+	if (flagResetError || (autoResetError && input->Error != 0)) {
+		data.Command1 = 0x10;
+		flagResetError = false;
+	} else if (robileCharge) {
+		data.Command1 = 0x20;
+		data.PwrDeviceId = 0x0C;
+		//data.Command1 = 0x10; // reset error
+
+/*	} else if ( robileEnablePump ) {
 		double pumpOnDuration = (now - pumpStartTime).total_milliseconds();
 		if ( pumpOnDuration > 1000.0 * 5 ) { // 30 seconds; 10 for new mechanism; 5s after ball bearing broke
 			robileEnablePump = false;
@@ -133,6 +143,7 @@ bool RobileMasterBattery::step() {
 			data.Command1 = 0x0;
 		}
 		data.Command1 = 0x20;
+*/
 	}	else {
 		data.Command1 = 0x0;
 	}
@@ -140,6 +151,14 @@ bool RobileMasterBattery::step() {
 	*((RobileMasterBatteryProcessDataOutput*) ecx_slaves[slaveNumber].outputs) = data;		
 
 	return true;
+}
+
+const RobileMasterBatteryProcessDataInput* RobileMasterBattery::getProcessDataInput() {
+	return (RobileMasterBatteryProcessDataInput*) ecx_slaves[slaveNumber].inputs;
+}
+
+void RobileMasterBattery::resetError() {
+	flagResetError = true;
 }
 
 void RobileMasterBattery::shutdown(int seconds) {

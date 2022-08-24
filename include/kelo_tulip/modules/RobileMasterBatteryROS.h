@@ -47,6 +47,7 @@
 
 #include "kelo_tulip/modules/RobileMasterBattery.h"
 #include "kelo_tulip/EtherCATModuleROS.h"
+#include <std_msgs/Empty.h>
 #include <std_msgs/Int32.h>
 
 namespace kelo {
@@ -68,13 +69,18 @@ public:
 	virtual EtherCATModule* getEtherCATModule();
 	
 protected:
+	void callbackResetError(const std_msgs::Empty& msg);
 	void callbackShutdown(const std_msgs::Int32& msg);
 	void callbackChargerStart(const std_msgs::Int32& msg);
 	void callbackChargerStop(const std_msgs::Int32& msg);
 
+	void publishEthercatInput();
+
 	RobileMasterBattery* battery;
 	
 	ros::Publisher batteryPublisher;
+	ros::Publisher processDataInputPublisher;
+	ros::Subscriber resetErrorSubscriber;
 	ros::Subscriber shutdownSubscriber;
 	ros::Subscriber chargerStartSubscriber;
 	ros::Subscriber chargerStopSubscriber;

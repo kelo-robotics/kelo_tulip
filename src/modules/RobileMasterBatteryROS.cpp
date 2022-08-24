@@ -43,6 +43,7 @@
 
 #include "kelo_tulip/modules/RobileMasterBatteryROS.h"
 #include <std_msgs/Float32.h>
+#include <std_msgs/Float64MultiArray.h>
 
 namespace kelo {
 
@@ -75,6 +76,9 @@ bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix)
 
 	// setup publishers and subscribers
 	batteryPublisher = nh.advertise<std_msgs::Float32>(topicPrefix + "voltage", 10);
+	processDataInputPublisher = nh.advertise<std_msgs::Float64MultiArray>(topicPrefix + "ethercat_input", 10);
+
+	resetErrorSubscriber = nh.subscribe(topicPrefix + "reset_error", 1, &RobileMasterBatteryROS::callbackResetError, this);
 	shutdownSubscriber = nh.subscribe(topicPrefix + "shutdown", 1, &RobileMasterBatteryROS::callbackShutdown, this);
 	chargerStartSubscriber = nh.subscribe("charger_start", 1, &RobileMasterBatteryROS::callbackChargerStart, this);
 	chargerStopSubscriber = nh.subscribe("charger_stop", 1, &RobileMasterBatteryROS::callbackChargerStop, this);
@@ -88,6 +92,8 @@ bool RobileMasterBatteryROS::step() {
 	msgBattery.data = battery->getVoltage();
 	batteryPublisher.publish(msgBattery);
 
+	publishEthercatInput();
+
 	return true;
 }
 
@@ -97,6 +103,10 @@ std::string RobileMasterBatteryROS::getType() {
 
 EtherCATModule* RobileMasterBatteryROS::getEtherCATModule() {
 	return battery;
+}
+
+void RobileMasterBatteryROS::callbackResetError(const std_msgs::Empty& msg) {
+	battery->resetError();
 }
 
 void RobileMasterBatteryROS::callbackShutdown(const std_msgs::Int32& msg) {
@@ -109,6 +119,94 @@ void RobileMasterBatteryROS::callbackChargerStart(const std_msgs::Int32& msg) {
 
 void RobileMasterBatteryROS::callbackChargerStop(const std_msgs::Int32& msg) {
 	battery->stopCharge();
+}
+
+void RobileMasterBatteryROS::publishEthercatInput() {
+	std_msgs::Float64MultiArray msg;
+	const RobileMasterBatteryProcessDataInput* input = battery->getProcessDataInput();
+	std_msgs::MultiArrayDimension dim;
+
+	dim.label = "timestamp";
+	msg.data.push_back(input->TimeStamp);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "status";
+	msg.data.push_back(input->Status);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "error";
+	msg.data.push_back(input->Error);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "warning";
+	msg.data.push_back(input->Warning);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "status";
+	msg.data.push_back(input->Status);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "output_current";
+	msg.data.push_back(input->OutputCurrent);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "output_voltage";
+	msg.data.push_back(input->OutputVoltage);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "output_power";
+	msg.data.push_back(input->OutputPower);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "aux_port_current";
+	msg.data.push_back(input->AuxPortCurrent);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "generic_data1";
+	msg.data.push_back(input->GenericData1);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "generic_data2";
+	msg.data.push_back(input->GenericData2);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_PwrDeviceId";
+	msg.data.push_back(input->bmsm_PwrDeviceId);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_Status";
+	msg.data.push_back(input->bmsm_Status);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_Voltage";
+	msg.data.push_back(input->bmsm_Voltage);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_Current";
+	msg.data.push_back(input->bmsm_Current);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_Temperature";
+	msg.data.push_back(input->bmsm_Temperature);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_SOC";
+	msg.data.push_back(input->bmsm_SOC);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_SN";
+	msg.data.push_back(input->bmsm_SN);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_BatData1";
+	msg.data.push_back(input->bmsm_BatData1);
+	msg.layout.dim.push_back(dim);
+
+	dim.label = "bmsm_BatData2";
+	msg.data.push_back(input->bmsm_BatData2);
+	msg.layout.dim.push_back(dim);
+
+	processDataInputPublisher.publish(msg);
 }
 
 } //namespace kelo
