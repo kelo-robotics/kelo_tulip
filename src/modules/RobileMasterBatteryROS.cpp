@@ -80,8 +80,8 @@ bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix)
 
 	resetErrorSubscriber = nh.subscribe(topicPrefix + "reset_error", 1, &RobileMasterBatteryROS::callbackResetError, this);
 	shutdownSubscriber = nh.subscribe(topicPrefix + "shutdown", 1, &RobileMasterBatteryROS::callbackShutdown, this);
-	chargerStartSubscriber = nh.subscribe("charger_start", 1, &RobileMasterBatteryROS::callbackChargerStart, this);
-	chargerStopSubscriber = nh.subscribe("charger_stop", 1, &RobileMasterBatteryROS::callbackChargerStop, this);
+	chargerStartSubscriber = nh.subscribe(topicPrefix + "charger_start", 1, &RobileMasterBatteryROS::callbackChargerStart, this);
+	chargerStopSubscriber = nh.subscribe(topicPrefix + "charger_stop", 1, &RobileMasterBatteryROS::callbackChargerStop, this);
 
 	return true;
 }
