@@ -125,84 +125,99 @@ void RobileMasterBatteryROS::publishEthercatInput() {
 	std_msgs::Float64MultiArray msg;
 	const RobileMasterBatteryProcessDataInput* input = battery->getProcessDataInput();
 	std_msgs::MultiArrayDimension dim;
+	dim.size = 1;
 
 	dim.label = "timestamp";
 	msg.data.push_back(input->TimeStamp);
 	msg.layout.dim.push_back(dim);
 
-	dim.label = "status";
+	dim.label = "status"; 
+	dim.stride++;
 	msg.data.push_back(input->Status);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "error";
+	dim.stride++;
 	msg.data.push_back(input->Error);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "warning";
+	dim.stride++;
 	msg.data.push_back(input->Warning);
 	msg.layout.dim.push_back(dim);
 
-	dim.label = "status";
-	msg.data.push_back(input->Status);
-	msg.layout.dim.push_back(dim);
-
 	dim.label = "output_current";
+	dim.stride++;
 	msg.data.push_back(input->OutputCurrent);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "output_voltage";
+	dim.stride++;
 	msg.data.push_back(input->OutputVoltage);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "output_power";
+	dim.stride++;
 	msg.data.push_back(input->OutputPower);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "aux_port_current";
+	dim.stride++;
 	msg.data.push_back(input->AuxPortCurrent);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "generic_data1";
+	dim.stride++;
 	msg.data.push_back(input->GenericData1);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "generic_data2";
+	dim.stride++;
 	msg.data.push_back(input->GenericData2);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_PwrDeviceId";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_PwrDeviceId);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_Status";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_Status);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_Voltage";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_Voltage);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_Current";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_Current);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_Temperature";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_Temperature);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_SOC";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_SOC);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_SN";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_SN);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_BatData1";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_BatData1);
 	msg.layout.dim.push_back(dim);
 
 	dim.label = "bmsm_BatData2";
+	dim.stride++;
 	msg.data.push_back(input->bmsm_BatData2);
 	msg.layout.dim.push_back(dim);
 
