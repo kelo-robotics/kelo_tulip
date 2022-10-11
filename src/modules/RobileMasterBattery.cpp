@@ -115,9 +115,8 @@ bool RobileMasterBattery::step() {
 		data.Command1 = 0x10;
 		flagResetError = false;
 	} else if (robileCharge) {
-		data.Command1 = 0x20;
+		data.Command1 = 0x0220;
 		data.PwrDeviceId = 0x0C;
-		//data.Command1 = 0x10; // reset error
 
 /*	} else if ( robileEnablePump ) {
 		double pumpOnDuration = (now - pumpStartTime).total_milliseconds();
