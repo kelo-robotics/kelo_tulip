@@ -79,6 +79,7 @@ public:
 protected:
 	virtual kelo::PlatformDriver* createDriver();
 	
+	void readWheelModels(const ros::NodeHandle& nh);
 	void readWheelConfig(const ros::NodeHandle& nh);
 	void checkAndPublishSmartWheelStatus();
 	
@@ -102,6 +103,7 @@ protected:
 	std::vector<kelo::WheelConfig> wheelConfigs;
 	std::vector<kelo::WheelData> wheelData;
 	std::vector<kelo::EtherCATModuleROS*> wheelModules;
+	std::map<std::string, kelo::WheelModel> wheelModels;
 
 	ros::Publisher processDataInputPublisher;
 	ros::Publisher odomPublisher;

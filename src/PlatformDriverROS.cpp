@@ -107,6 +107,7 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	wheelData.resize(nWheels, data);
 
 	// read all wheel configs
+	readWheelModels(nh);
 	readWheelConfig(nh);
 
 	driver = createDriver();
@@ -221,6 +222,25 @@ kelo::PlatformDriver* PlatformDriverROS::createDriver() {
 	return new kelo::PlatformDriver(wheelConfigs, wheelData);
 }
 
+void PlatformDriverROS::readWheelModels(const ros::NodeHandle& nh) {
+	XmlRpc::XmlRpcValue xmllist;
+	nh.getParam("wheel_models", xmllist);
+	for (XmlRpc::XmlRpcValue::iterator it = xmllist.begin(); it != xmllist.end(); ++it) {
+		std::string name = it->first;
+		std::string prefix = "wheel_models/" + name + "/";
+		WheelModel wm;
+		wm.name = name;
+		nh.getParam(prefix + "active", wm.active);
+		nh.getParam(prefix + "diameter", wm.diameter);
+		nh.getParam(prefix + "width", wm.width);
+		nh.getParam(prefix + "casteroffset", wm.casteroffset);
+		nh.getParam(prefix + "wheeldistance", wm.wheeldistance);
+		nh.getParam(prefix + "can_pivot", wm.canPivot);
+		nh.getParam(prefix + "velocitylimit", wm.velocitylimit);
+		nh.getParam(prefix + "currentlimit", wm.currentlimit);
+		wheelModels[name] = wm;
+	}
+}
 
 void PlatformDriverROS::readWheelConfig(const ros::NodeHandle& nh) {
 	for (int i = 0; i < nWheels; i++) {
@@ -244,6 +264,17 @@ void PlatformDriverROS::readWheelConfig(const ros::NodeHandle& nh) {
 		if (!ok)
 			ROS_WARN("Missing config value for wheel %d", i);
 
+		// copy complete model data if provided
+		std::string model;
+		if (nh.getParam(groupName + "/model", model)) {
+			if (wheelModels.count(model) > 0) {
+				config.model = wheelModels[model];
+			} else {
+				ROS_WARN("Unknown wheel model: %s", model.c_str());
+			}
+		}
+
+		// enable separate values for this wheel
 		double x;
 		if (nh.getParam(groupName + "/wheel_distance", x))
 			config.model.wheeldistance = x;
