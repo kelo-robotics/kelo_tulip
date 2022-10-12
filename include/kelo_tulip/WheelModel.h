@@ -42,24 +42,38 @@
  ******************************************************************************/
 
 
-#ifndef WHEELCONFIG_H
-#define WHEELCONFIG_H
+#ifndef WHEELMODEL_H
+#define WHEELMODEL_H
 
-#include "kelo_tulip/WheelModel.h"
+#include <vector>
+#include <string>
 
 namespace kelo {
 
-struct WheelConfig {
-	int ethercatNumber;
-	double x;
-	double y;
-	double a;
-	bool enable;
-	bool reverseVelocity;
+struct WheelModel {
+	std::string name;
+	bool active;             // actively controlled or passive
+	double diameter;
+	double width;
+	double casteroffset;
+	double wheeldistance;    // [m] distance between centers of both hubwheels
+	bool canPivot;
+	double velocitylimit;    // [rad/s] for one hubwheel
+	double currentlimit;
 	
-	WheelModel model;
+	WheelModel() {
+		name = "KELOdrive105";
+		active = true;
+		diameter = 0.105;
+		width = 0.040;
+		casteroffset = 0.010;
+		wheeldistance = 0.080;
+		canPivot = true;
+		velocitylimit = 100.0;
+		currentlimit = 10.0;
+	}
 };
 
 } // namespace kelp
 
-#endif // WHEELCONFIG_H
+#endif // WHEELMODEL_H

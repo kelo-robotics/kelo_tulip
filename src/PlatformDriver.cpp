@@ -69,9 +69,6 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	nWheels = wheelConfigs.size();
 
 	// controller parameters
-	wheelDistance = 0.0775;
-	wheelDiameter = 0.104;
-	
 	currentStop = 1;
 	currentDrive = 20;
 
@@ -241,14 +238,6 @@ bool PlatformDriver::stepError() {
 
 void PlatformDriver::setTargetVelocity(double vx, double vy, double va) {
 	velocityPlatformController.setPlatformTargetVelocity(vx, vy, va);
-}
-
-void PlatformDriver::setWheelDistance(double x) {
-	wheelDistance = x;
-}
-
-void PlatformDriver::setWheelDiameter(double x) {
-	wheelDiameter = x;
 }
 
 void PlatformDriver::setCurrentStop(double x) {

@@ -112,8 +112,6 @@ public:
 
 	void reconnectSlave(int slave);
 
-	void setWheelDistance(double x);
-	void setWheelDiameter(double x);
 	void setCurrentStop(double x);
 	void setCurrentDrive(double x);
 	double getCurrentDrive();
@@ -181,9 +179,6 @@ protected:
 	int firstWheel, nWheels;
 	std::vector<WheelConfig> wheelConfigs;
 	std::vector<WheelData> wheelData;
-
-	double wheelDistance;
-	double wheelDiameter;
 	
 	double maxCalibrationTime;
 	double vCalibration;

@@ -89,14 +89,14 @@ namespace kelo
 
         unsigned int num_of_wheels = wheel_configs.size();
 
-        float wheel_diameter = 0.105f;
-        float wheel_caster = 0.01f;
-        float wheel_distance = 0.055f;
-
         wheel_params_.clear();
 
         for ( size_t i = 0; i < num_of_wheels; i++ )
         {
+            float wheel_diameter = wheel_configs[i].model.diameter;
+            float wheel_caster = wheel_configs[i].model.casteroffset;
+            float wheel_distance = wheel_configs[i].model.wheeldistance;
+
             WheelParamVelocity wheel_param;
             wheel_param.relative_position_l.x = -1 * wheel_caster;
             wheel_param.relative_position_l.y = 0.5 * wheel_distance;

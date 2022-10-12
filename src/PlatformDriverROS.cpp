@@ -113,10 +113,6 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 
 	// set driver control parameters		
 	double x;
-	if (nh.getParam("wheel_distance", x))
-		driver->setWheelDistance(x);
-	if (nh.getParam("wheel_diameter", x))
-		driver->setWheelDiameter(x);
 	if (nh.getParam("current_stop", x))
 		driver->setCurrentStop(x);
 	if (nh.getParam("current_drive", x))
@@ -247,6 +243,12 @@ void PlatformDriverROS::readWheelConfig(const ros::NodeHandle& nh) {
 
 		if (!ok)
 			ROS_WARN("Missing config value for wheel %d", i);
+
+		double x;
+		if (nh.getParam(groupName + "/wheel_distance", x))
+			config.model.wheeldistance = x;
+		if (nh.getParam(groupName + "/diameter", x))
+			config.model.diameter = x;
 
 		wheelConfigs[i] = config;
 	}
