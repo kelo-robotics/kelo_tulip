@@ -324,15 +324,11 @@ double norm(double x) {
 }
 
 void PlatformDriverROS::initializeEncoderValue() {
-std::cout << "in----enc 1 " << std::endl;
 	prev_left_enc.resize(nWheels, 0);
 	prev_right_enc.resize(nWheels, 0);
-std::cout << "in----enc 2 " << std::endl;
 	for (int i=0; i<nWheels; i++) {
-std::cout << "in----enc 3 " << std::endl;
 		std::vector<double> encoderValueInit = driver->getEncoderValue(i);
 		prev_left_enc[i] = encoderValueInit[0];
-std::cout << "in----enc 4 " << std::endl;
 		prev_right_enc[i] = encoderValueInit[1];
 	}
 }
