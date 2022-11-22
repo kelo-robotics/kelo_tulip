@@ -98,6 +98,7 @@ protected:
 	void currentMaxCallback(const std_msgs::Float32& msg);
 	void resetCallback(const std_msgs::Empty& msg);
 
+	virtual void joyCallbackImpl(const sensor_msgs::Joy::ConstPtr& joy);
 
 	kelo::PlatformDriver* driver;
 	std::vector<kelo::WheelConfig> wheelConfigs;

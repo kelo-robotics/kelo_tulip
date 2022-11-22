@@ -525,6 +525,10 @@ void PlatformDriverROS::publishIMU() {
 }
 
 void PlatformDriverROS::joyCallback(const sensor_msgs::Joy::ConstPtr& joy) {
+	joyCallbackImpl(joy);
+}
+
+void PlatformDriverROS::joyCallbackImpl(const sensor_msgs::Joy::ConstPtr& joy) {
 	if (joy->buttons[5]) {
 		useJoy = true;
 
