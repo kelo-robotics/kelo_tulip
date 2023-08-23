@@ -141,6 +141,8 @@ public:
 	void resetErrorFlags();
 
 	std::vector<double> getEncoderValue(int idx);
+
+	void SetState(int wheel, uint16_t state);
 		
 protected:
 	int checkSmartwheelTimestamp();

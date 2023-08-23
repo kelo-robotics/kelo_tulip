@@ -123,6 +123,7 @@ bool EtherCATMaster::initEthercat() {
 	// initialize modules and return false if any fails	
 	for (unsigned int i = 0; i < modules.size(); i++) {
 		bool ok = modules[i]->initEtherCAT(ecx_slave, ecx_slavecount);
+		std::cout << "Module " << i << "Result " << ok << std::endl;
 		if (!ok)
 			return false;
 	}

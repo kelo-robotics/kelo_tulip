@@ -418,6 +418,12 @@ int PlatformDriver::checkSmartwheelTimestamp() {
 	return result;		
 }
 
+void PlatformDriver::SetState(int wheel, uint16_t state) {
+	int slave = wheelConfigs[wheel].ethercatNumber;
+	ec_slave[slave].state = state;
+	ecx_writestate(&ecx_context, slave);
+}
+
 void PlatformDriver::updateEncoders() {
 	if(!encoderInitialized) {
 		for (int i = 0; i < nWheels; i++) {
