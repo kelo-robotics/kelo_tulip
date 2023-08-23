@@ -101,7 +101,7 @@ target_link_libraries(platform_driver
 
 IF(USE_SETCAP)
   add_custom_command(TARGET platform_driver POST_BUILD
-  	COMMAND ${SUDO_COMMAND} setcap cap_net_raw+ep $<TARGET_FILE:platform_driver>
+  	COMMAND ${SUDO_COMMAND} setcap cap_sys_nice,cap_net_raw+ep $<TARGET_FILE:platform_driver>
   )
 endif(USE_SETCAP)
 
