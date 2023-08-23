@@ -170,7 +170,21 @@ bool EtherCATMaster::initEthercat() {
 			<< " delay: " << ecx_slave[cnt].pdelay << std::endl; //<< " has dclock: " << (bool)ecx_slave[cnt].hasdc;
 	}
 
- 	ethercatThread = new boost::thread(boost::bind(&EtherCATMaster::ethercatHandler, this));
+	boost::thread::attributes attrs;
+	sched_param param;
+	int ret;
+	ret = pthread_attr_init(attrs.native_handle());
+	std::cout << "Pthread attr init :" << ret << std::endl;
+	attrs.set_stack_size(4096*32);
+	ret = pthread_attr_getschedparam(attrs.native_handle(), &param);
+	std::cout << "Pthread attr getschedparam :" << ret << std::endl;
+	param.sched_priority = 10;
+    ret = pthread_attr_setschedpolicy(attrs.native_handle(), SCHED_FIFO);
+	std::cout << "Pthread set sched policy :" << ret << std::endl;
+	ret = pthread_attr_setschedparam (attrs.native_handle(), &param);
+	std::cout << "Pthread set sched param :" << ret << std::endl;
+
+ 	ethercatThread = new boost::thread(attrs, boost::bind(&EtherCATMaster::ethercatHandler, this));
 
 	return true;
 }
