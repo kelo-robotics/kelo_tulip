@@ -112,9 +112,15 @@ PlatformDriver::~PlatformDriver() {
 PlatformDriver::PlatformDriver(const PlatformDriver&) {
 }
 
+bool PlatformDriver::initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) {
+	this->ecx_contextp = ecx_context;
+	return true;
+}
+
 bool PlatformDriver::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) {
 	this->ecx_slaves = ecx_slaves;
 
+	std::cout << "PlatformDriver InitEtherCAT\n";
 	for (unsigned int i = 0; i < wheelConfigs.size(); i++) {
 		int slave = wheelConfigs[i].ethercatNumber;
 		std::cout << "Wheel #" << i << " is slave #" << slave << std::endl; 
@@ -199,10 +205,12 @@ bool PlatformDriver::stepInit() {
 		if (!hasWheelStatusEnabled(wheel) || hasWheelStatusError(wheel))
 			ready = false;
 	
-	if (ready)
+	if (ready) {
 		state = DRIVER_STATE_READY;
+		std::cout << "PlatformDriver from INIT to READY" << std::endl;
+	}
 		
-	if (stepCount > 10 && !ready) {
+	if (stepCount > 500 && !ready) {
 		std::cout << "Stopping platform driver, because wheels don't become ready." << std::endl;
 		return false;
 	}
@@ -214,8 +222,10 @@ bool PlatformDriver::stepReady() {
 	doStop();
 
 	if (!statusError) {
-		if (canChangeActive)
+		if (canChangeActive) {
 			state = DRIVER_STATE_ACTIVE;
+			std::cout << "PlatformDriver from READY to ACTIVE" << std::endl;
+		}
 		else if (!showedMessageChangeActive) {
 			std::cout << "platform driver is ready, but waiting for signal to become active." << std::endl;
 			showedMessageChangeActive = true;
@@ -420,8 +430,10 @@ int PlatformDriver::checkSmartwheelTimestamp() {
 
 void PlatformDriver::SetState(int wheel, uint16_t state) {
 	int slave = wheelConfigs[wheel].ethercatNumber;
-	ec_slave[slave].state = state;
-	ecx_writestate(&ecx_context, slave);
+	std::cout << "SetState wheel " << wheel << " slave " << slave << " state " << std::hex << state << std::endl;
+	ecx_context.slavelist[slave].state = state;
+	ecx_writestate(ecx_contextp, slave);
+	std::cout << " SetState done." << std::endl;
 }
 
 void PlatformDriver::updateEncoders() {

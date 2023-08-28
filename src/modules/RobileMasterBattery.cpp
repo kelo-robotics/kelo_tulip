@@ -66,6 +66,11 @@ RobileMasterBattery::RobileMasterBattery(int slaveNumber) : EtherCATModule() {
 RobileMasterBattery::~RobileMasterBattery() {
 }
 
+bool RobileMasterBattery::initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount)
+{
+	return true;
+}
+
 bool RobileMasterBattery::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount)  {
 	this->ecx_slaves = ecx_slaves;
 

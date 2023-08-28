@@ -97,6 +97,8 @@ public:
 	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
 	virtual ~PlatformDriver();
 
+	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount); 
+
 	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
 	virtual bool step();
 	
@@ -162,6 +164,7 @@ protected:
 	int stepCount;
 
 	ec_slavet* ecx_slaves;
+	ecx_contextt* ecx_contextp;
 	
 	std::vector<EtherCATModule*> modules;
 

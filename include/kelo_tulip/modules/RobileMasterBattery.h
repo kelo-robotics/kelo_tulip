@@ -56,6 +56,7 @@ public:
 	virtual ~RobileMasterBattery();
 	
 	bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount);
+	bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount);
 	bool step();
 	
 	const struct RobileMasterBatteryProcessDataInput* getProcessDataInput();

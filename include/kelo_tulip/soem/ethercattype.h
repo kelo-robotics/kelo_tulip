@@ -54,7 +54,7 @@ extern "C"
 /** timeout value in us for tx frame to return to rx */
 #define EC_TIMEOUTRET      2000
 /** timeout value in us for safe data transfer, max. triple retry */
-#define EC_TIMEOUTRET3     (EC_TIMEOUTRET * 3)
+#define EC_TIMEOUTRET3     (EC_TIMEOUTRET * 10)
 /** timeout value in us for return "safe" variant (f.e. wireless) */
 #define EC_TIMEOUTSAFE     20000
 /** timeout value in us for EEPROM access */

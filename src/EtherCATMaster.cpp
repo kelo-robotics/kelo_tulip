@@ -121,25 +121,31 @@ bool EtherCATMaster::initEthercat() {
 	expectedWKC = (ecx_context.grouplist[0].outputsWKC * 2) + ecx_context.grouplist[0].inputsWKC;
 
 	// initialize modules and return false if any fails	
+	std::cout << "Modules to init : " << modules.size() << std::endl;
 	for (unsigned int i = 0; i < modules.size(); i++) {
+		std::cout << " Module " << i << " initializing..." << std::endl;
 		bool ok = modules[i]->initEtherCAT(ecx_slave, ecx_slavecount);
-		std::cout << "Module " << i << "Result " << ok << std::endl;
-		if (!ok)
+		if (!ok) {
+			std::cout << "Module fails, stop EtherCATMaster." << std::endl;
 			return false;
+		}
+		std::cout << " Module " << i << " Result " << ok << std::endl;
+		ok = modules[i]->initEtherCAT2(&ecx_context, ecx_slavecount);
 	}
+	std::cout << "Module init finished." << std::endl;
 
-	std::cout << ecx_slavecount << " EtherCAT slaves found and configured.\n";
+	std::cout << ecx_slavecount << " EtherCAT slaves found and configured." << std::endl;
 
 	// wait for all slaves to reach SAFE_OP state */
 	ecx_statecheck(&ecx_context, 0, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE);
 	if (ecx_slave[0].state != EC_STATE_SAFE_OP) {
-		std::cout << "Not all EtherCAT slaves reached safe operational state.\n";
+		std::cout << "Not all EtherCAT slaves reached safe operational state." << std::endl;
 		ecx_readstate(&ecx_context);
 
 		// If not all slaves operational find out which one
 		for (int i = 1; i <= ecx_slavecount; i++) {
 			if (ecx_slave[i].state != EC_STATE_SAFE_OP) {
-				std::cout << "Slave " << i << " State=" << ecx_slave[i].state << " StatusCode=" << ecx_slave[i].ALstatuscode << " : " << ec_ALstatuscode2string(ecx_slave[i].ALstatuscode) << "\n";
+				std::cout << "Slave " << i << " State=" << ecx_slave[i].state << " StatusCode=" << ecx_slave[i].ALstatuscode << " : " << ec_ALstatuscode2string(ecx_slave[i].ALstatuscode) << std::endl;
 			}
 		}
 
@@ -178,13 +184,14 @@ bool EtherCATMaster::initEthercat() {
 	attrs.set_stack_size(4096*32);
 	ret = pthread_attr_getschedparam(attrs.native_handle(), &param);
 	std::cout << "Pthread attr getschedparam :" << ret << std::endl;
-	param.sched_priority = 10;
+	param.sched_priority = 40;
     ret = pthread_attr_setschedpolicy(attrs.native_handle(), SCHED_FIFO);
 	std::cout << "Pthread set sched policy :" << ret << std::endl;
 	ret = pthread_attr_setschedparam (attrs.native_handle(), &param);
 	std::cout << "Pthread set sched param :" << ret << std::endl;
 
  	ethercatThread = new boost::thread(attrs, boost::bind(&EtherCATMaster::ethercatHandler, this));
+// 	ethercatThread = new boost::thread(boost::bind(&EtherCATMaster::ethercatHandler, this));
 
 	return true;
 }
@@ -223,7 +230,7 @@ void EtherCATMaster::ethercatHandler() {
 
 	unsigned int ethercatTimeout = 1000;
 	long int communicationErrors = 0;
-	long int maxCommunicationErrors = 100;
+	long int maxCommunicationErrors = 1000;
 	int timeTillNextEthercatUpdate = 1000; //usec
 
 	ecx_send_processdata(&ecx_context);
@@ -243,8 +250,6 @@ void EtherCATMaster::ethercatHandler() {
 			pauseThreadMs = 0;
 		}
 
-		// check for slave timeout errors
-		ecx_readstate(&ecx_context);
 		/*
 		for (unsigned int i = 0; i < nWheels; i++) {
 			int slave = (*wheelConfigs)[i].ethercatNumber;
@@ -285,9 +290,9 @@ void EtherCATMaster::ethercatHandler() {
 			if (!ethercatWkcError)
 				std::cout << "WKC error: expected " << expectedWKC << ", got " << wkc << std::endl;
 			ethercatWkcError = true;
-		}
+		} else ethercatWkcError = false;
 		
-		if (wkc == 0) {
+		if (wkc <= 0) {
 			if (communicationErrors == 0) {
 				std::cout << "Receiving data failed" << std::endl;
 			}
@@ -302,6 +307,11 @@ void EtherCATMaster::ethercatHandler() {
 			stopThread = true;
 			break;
 		}
+
+		// check for slave timeout errors
+		static uint32_t cnt = 0;
+		if((cnt++ % 64) == 0)
+			ecx_readstate(&ecx_context);
 
 		bool modulesOK = true;
 		for (unsigned int i = 0; i < modules.size() && modulesOK; i++)
@@ -321,6 +331,8 @@ void EtherCATMaster::ethercatHandler() {
 		}
 
 		if (ecx_iserror(&ecx_context)) {
+			ec_errort ec;
+			ecx_poperror(&ecx_context, &ec);
 			std::cout << "There is an error in the soem driver" << std::endl;
 		}
 		

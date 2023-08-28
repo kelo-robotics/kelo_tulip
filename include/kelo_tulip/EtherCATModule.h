@@ -59,6 +59,7 @@ public:
 	virtual ~EtherCATModule();
 	
 	virtual bool initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) = 0;
+	virtual bool initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) = 0;
 	virtual bool step() = 0;
 };
 
