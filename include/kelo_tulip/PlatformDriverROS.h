@@ -46,6 +46,7 @@
 
 #include "kelo_tulip/EtherCATModuleROS.h"
 #include "kelo_tulip/PlatformDriver.h"
+#include "kelo_tulip/KeloDrivesInput.h"
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Empty.h>

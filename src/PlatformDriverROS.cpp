@@ -43,7 +43,6 @@
 
 
 #include "kelo_tulip/PlatformDriverROS.h"
-#include "kelo_tulip/KeloDrivesInput.h"
 #include "kelo_tulip/ShockBin.h"
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
@@ -514,15 +513,16 @@ void PlatformDriverROS::publishBattery() {
 
 void PlatformDriverROS::publishIMU() {
 	for (unsigned int i=0; i<wheelConfigs.size(); i++) {
-		txpdo1_t* swData = driver->getWheelProcessData(i);
-		sensor_msgs::Imu imu;
-		imu.angular_velocity.x = swData->gyro_x;
-		imu.angular_velocity.y = swData->gyro_y;
-		imu.angular_velocity.z = swData->gyro_z;
-		imu.linear_acceleration.x = swData->accel_x;
-		imu.linear_acceleration.y = swData->accel_y;
-		imu.linear_acceleration.z = swData->accel_z;
-		imuPublisher.publish(imu);
+		// TODO : need to add wheel number to IMU data to prevent confusion
+		// txpdo1_t* swData = driver->getWheelProcessData(i);
+		// sensor_msgs::Imu imu;
+		// imu.angular_velocity.x = swData->gyro_x;
+		// imu.angular_velocity.y = swData->gyro_y;
+		// imu.angular_velocity.z = swData->gyro_z;
+		// imu.linear_acceleration.x = swData->accel_x;
+		// imu.linear_acceleration.y = swData->accel_y;
+		// imu.linear_acceleration.z = swData->accel_z;
+		// imuPublisher.publish(imu);
 		struct shockData* shockp = driver->getShockData(i);
 		if(shockp) {
 			kelo_tulip::ShockBin shockmsg;
