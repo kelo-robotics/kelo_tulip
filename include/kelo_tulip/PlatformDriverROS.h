@@ -111,6 +111,7 @@ protected:
 	ros::Publisher odomInitializedPublisher;
 	ros::Publisher mileagePublisher;
 	ros::Publisher imuPublisher;
+	ros::Publisher shockPublisher;
 	//ros::Publisher valuesPublisher;
 	ros::Publisher batteryPublisher;
 	ros::Publisher errorPublisher;

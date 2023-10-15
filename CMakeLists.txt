@@ -37,6 +37,7 @@ add_message_files(
 	FILES
 		KeloDriveInput.msg
 		KeloDrivesInput.msg
+		ShockBin.msg
 )
 
 generate_messages(

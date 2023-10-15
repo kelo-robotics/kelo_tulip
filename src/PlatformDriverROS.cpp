@@ -44,6 +44,7 @@
 
 #include "kelo_tulip/PlatformDriverROS.h"
 #include "kelo_tulip/KeloDrivesInput.h"
+#include "kelo_tulip/ShockBin.h"
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/Imu.h>
 #include <sensor_msgs/Joy.h>
@@ -155,6 +156,7 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	odomInitializedPublisher = nhGlobal.advertise<std_msgs::Empty>("odom_initialized", 10);
 //	timestampPublisher = nh.advertise<std_msgs::UInt64MultiArray>("timestamp", 10);
 	imuPublisher = nh.advertise<sensor_msgs::Imu>("imu", 10);
+	shockPublisher = nh.advertise<kelo_tulip::ShockBin>("shock", 10);
 	processDataInputPublisher = nh.advertise<kelo_tulip::KeloDrivesInput>("wheels_input", 10);
 	batteryPublisher = nh.advertise<std_msgs::Float32>("battery", 10);
 	errorPublisher = nh.advertise<std_msgs::Int32>("error", 10);
@@ -521,6 +523,24 @@ void PlatformDriverROS::publishIMU() {
 		imu.linear_acceleration.y = swData->accel_y;
 		imu.linear_acceleration.z = swData->accel_z;
 		imuPublisher.publish(imu);
+		struct shockData* shockp = driver->getShockData(i);
+		if(shockp) {
+			kelo_tulip::ShockBin shockmsg;
+			shockmsg.wheel = i;
+			shockmsg.first_ts = shockp->first_ts;
+			shockmsg.last_ts = shockp->last_ts;
+			for(int n = 0 ; n < SHOCKBINSIZE; n++)
+			{
+				shockmsg.binX.push_back(shockp->binX[n]);
+				shockmsg.binY.push_back(shockp->binY[n]);
+				shockmsg.binZ.push_back(shockp->binZ[n]);
+			}
+			shockmsg.maxX = shockp->maxX;	
+			shockmsg.maxY = shockp->maxY;	
+			shockmsg.maxZ = shockp->maxZ;
+			driver->clearShockData(i);
+			shockPublisher.publish(shockmsg);
+		}
 	}
 }
 

@@ -1,0 +1,9 @@
+uint32 wheel	
+uint64 first_ts
+uint64 last_ts
+uint32[] binX
+uint32[] binY
+uint32[] binZ
+uint32 maxX
+uint32 maxY
+uint32 maxZ
