@@ -79,6 +79,7 @@ public:
 
 protected:
 	void ethercatHandler();
+	void ethercatCheck();
 	std::ofstream logfile;
 	bool canChangeActive;
 	bool showedMessageChangeActive;
@@ -101,6 +102,8 @@ protected:
 	ecx_redportt ecx_redport;
 	ecx_contextt ecx_context;
 	int expectedWKC;
+	volatile int wkc;
+	bool inOP = false;
 	
 	std::vector<EtherCATModule*> modules;
 
@@ -108,6 +111,7 @@ protected:
 	std::string device;
 	bool ethercatInitialized;
 	boost::thread* ethercatThread;
+	boost::thread* ethercatCheckThread;
 	volatile bool stopThread;
 	volatile int threadPhase;
 	volatile int pauseThreadMs;

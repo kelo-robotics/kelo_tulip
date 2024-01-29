@@ -99,8 +99,8 @@ bool EtherCATMaster::initEthercat() {
 	}
 
 	// find and auto-config slaves
-	int wkc = ecx_config_init(&ecx_context, TRUE);
-	if (!wkc) {
+	int wkc2 = ecx_config_init(&ecx_context, TRUE);
+	if (!wkc2) {
 		std::cout << "No EtherCAT slaves were found.\n";
 		return false;
 	}
@@ -176,22 +176,23 @@ bool EtherCATMaster::initEthercat() {
 			<< " delay: " << ecx_slave[cnt].pdelay << std::endl; //<< " has dclock: " << (bool)ecx_slave[cnt].hasdc;
 	}
 
+
+	wkc = expectedWKC;
+ 	ethercatCheckThread = new boost::thread(boost::bind(&EtherCATMaster::ethercatCheck, this));
+
 	boost::thread::attributes attrs;
 	sched_param param;
 	int ret;
 	ret = pthread_attr_init(attrs.native_handle());
-	std::cout << "Pthread attr init :" << ret << std::endl;
 	attrs.set_stack_size(4096*32);
 	ret = pthread_attr_getschedparam(attrs.native_handle(), &param);
-	std::cout << "Pthread attr getschedparam :" << ret << std::endl;
 	param.sched_priority = 40;
     ret = pthread_attr_setschedpolicy(attrs.native_handle(), SCHED_FIFO);
-	std::cout << "Pthread set sched policy :" << ret << std::endl;
 	ret = pthread_attr_setschedparam (attrs.native_handle(), &param);
-	std::cout << "Pthread set sched param :" << ret << std::endl;
 
  	ethercatThread = new boost::thread(attrs, boost::bind(&EtherCATMaster::ethercatHandler, this));
 // 	ethercatThread = new boost::thread(boost::bind(&EtherCATMaster::ethercatHandler, this));
+	inOP = true;
 
 	return true;
 }
@@ -223,7 +224,7 @@ void EtherCATMaster::reconnectSlave(int slave) {
 
 void EtherCATMaster::ethercatHandler() {
 	int step = 0;
-	int wkc = 0;
+	int wkc2 = 0;
 	long timeToWait = 0;
 	boost::posix_time::ptime startTime = boost::posix_time::microsec_clock::local_time();
 	boost::posix_time::time_duration pastTime;
@@ -250,38 +251,6 @@ void EtherCATMaster::ethercatHandler() {
 			pauseThreadMs = 0;
 		}
 
-		/*
-		for (unsigned int i = 0; i < nWheels; i++) {
-			int slave = (*wheelConfigs)[i].ethercatNumber;
-			if (ecx_slave[slave].state == EC_STATE_SAFE_OP + EC_STATE_ERROR) {
-				std::cout << "Trying to reconnect slave " << slave << std::endl;
-		
-			//if (flagReconnectSlave) {	
-				ecx_slave[slave].state = EC_STATE_SAFE_OP + EC_STATE_ACK;
-				ecx_writestate(&ecx_context, slave);
-			  ecx_statecheck(&ecx_context, slave, EC_STATE_SAFE_OP, EC_TIMEOUTSTATE);
-				ecx_readstate(&ecx_context);
-			  if (ecx_slave[slave].state != EC_STATE_SAFE_OP) {
-			    std::cout << "Failed to reset slave to SAFE_OP.\n";
-				} else {
-					ecx_slave[slave].state = EC_STATE_OPERATIONAL;
-					
-				  ecx_send_processdata(&ecx_context);
-				  ecx_receive_processdata(&ecx_context, EC_TIMEOUTRET);
-					ecx_writestate(&ecx_context, slave);
-				  ecx_statecheck(&ecx_context, slave, EC_STATE_OPERATIONAL, EC_TIMEOUTSTATE);
-					ecx_readstate(&ecx_context);
-				  if (ecx_slave[slave].state != EC_STATE_OPERATIONAL) {
-				    std::cout << "Failed to reset slave " << slave << " to OP.\n";
-					} else {
-				   std::cout << "Returned slave " << slave << " to OP state.\n";
-				  }
-				}
-			//flagReconnectSlave = false;
-			}
-		}
-		*/
-			
 		startTime = boost::posix_time::microsec_clock::local_time();
 
 		wkc = ecx_receive_processdata(&ecx_context, ethercatTimeout);
@@ -301,11 +270,8 @@ void EtherCATMaster::ethercatHandler() {
 			communicationErrors = 0;
 		}
 
-		if (communicationErrors > maxCommunicationErrors) {
+		if (communicationErrors == maxCommunicationErrors) {
 			std::cout << "Lost EtherCAT connection" << std::endl;
-			closeEthercat();
-			stopThread = true;
-			break;
 		}
 
 		// check for slave timeout errors
@@ -325,8 +291,8 @@ void EtherCATMaster::ethercatHandler() {
 		}
 
 		//send and receive data from ethercat
-		wkc = ecx_send_processdata(&ecx_context);
-		if (wkc == 0) {
+		wkc2 = ecx_send_processdata(&ecx_context);
+		if (wkc2 == 0) {
 			std::cout << "Sending process data failed" << std::endl;
 		}
 
@@ -340,6 +306,88 @@ void EtherCATMaster::ethercatHandler() {
 	}
 	
 	std::cout << "Stopped EtherCAT thread" << std::endl;
+}
+
+#define EC_TIMEOUTMON 500
+
+void EtherCATMaster::ethercatCheck(void)
+{
+    int slave;
+	int currentgroup = 0;
+	std::cout << "Start EtherCAT Check thread" << std::endl;
+
+    while(!stopThread)
+    {
+        if( inOP && ((wkc < expectedWKC) || ec_group[currentgroup].docheckstate))
+        {
+            /* one ore more slaves are not responding */
+            ec_group[currentgroup].docheckstate = FALSE;
+            ecx_readstate(&ecx_context);
+            for (slave = 1; slave <= ec_slavecount; slave++)
+            {
+               if ((ecx_slave[slave].group == currentgroup) && (ecx_slave[slave].state != EC_STATE_OPERATIONAL))
+               {
+                  ec_group[currentgroup].docheckstate = TRUE;
+                  if (ecx_slave[slave].state == (EC_STATE_SAFE_OP + EC_STATE_ERROR))
+                  {
+                     printf("ERROR : slave %d is in SAFE_OP + ERROR, attempting ack.\n", slave);
+                     ecx_slave[slave].state = (EC_STATE_SAFE_OP + EC_STATE_ACK);
+                     ecx_writestate(&ecx_context, slave);
+                  }
+                  else if(ecx_slave[slave].state == EC_STATE_SAFE_OP)
+                  {
+                     printf("WARNING : slave %d is in SAFE_OP, change to OPERATIONAL.\n", slave);
+                     ecx_slave[slave].state = EC_STATE_OPERATIONAL;
+                     ecx_writestate(&ecx_context, slave);
+                  }
+                  else if(ecx_slave[slave].state > EC_STATE_NONE)
+                  {
+                     if (ecx_reconfig_slave(&ecx_context, slave, EC_TIMEOUTMON) >= EC_STATE_PRE_OP)
+                     {
+                        ecx_slave[slave].islost = FALSE;
+                        printf("MESSAGE : slave %d reconfigured\n",slave);
+                     }
+                  }
+                  else if(!ecx_slave[slave].islost)
+                  {
+                     /* re-check state */
+                     ecx_statecheck(&ecx_context, slave, EC_STATE_OPERATIONAL, EC_TIMEOUTRET);
+                     if (ecx_slave[slave].state == EC_STATE_NONE)
+                     {
+                        ecx_slave[slave].islost = TRUE;
+                        /* zero input data for this slave */
+                        if(ecx_slave[slave].Ibytes)
+                        {
+                           memset(ecx_slave[slave].inputs, 0x00, ecx_slave[slave].Ibytes);
+                           printf("zero inputs %p %d\n\r", ecx_slave[slave].inputs, ecx_slave[slave].Ibytes);
+                        }
+                        printf("ERROR : slave %d lost\n",slave);
+                     }
+                  }
+               }
+               if (ecx_slave[slave].islost)
+               {
+                  if(ecx_slave[slave].state <= EC_STATE_INIT)
+                  {
+                     if (ecx_recover_slave(&ecx_context, slave, EC_TIMEOUTMON))
+                     {
+                        ecx_slave[slave].islost = FALSE;
+                        printf("MESSAGE : slave %d recovered\n",slave);
+                     }
+                  }
+                  else
+                  {
+                     ecx_slave[slave].islost = FALSE;
+                     printf("MESSAGE : slave %d found\n",slave);
+                  }
+               }
+            }
+            if(!ec_group[currentgroup].docheckstate)
+               printf("OK : all slaves resumed OPERATIONAL.\n");
+        }
+        osal_usleep(10000);
+    }
+	std::cout << "Stopped EtherCAT Check thread" << std::endl;
 }
 
 bool EtherCATMaster::hasWkcError() {
