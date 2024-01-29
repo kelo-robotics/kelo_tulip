@@ -371,6 +371,12 @@ int ecx_config_init(ecx_contextt *context, uint8 usetable)
       {
          eedat = ecx_readeeprom2(context, slave, EC_TIMEOUTEEP); /* revision */
          context->slavelist[slave].eep_rev = etohl(eedat);
+         ecx_readeeprom1(context, slave, ECT_SII_SER); /* write mailbox address + mailboxsize */
+      }
+      for (slave = 1; slave <= *(context->slavecount); slave++)
+      {
+         eedat = ecx_readeeprom2(context, slave, EC_TIMEOUTEEP); /* serial number */
+         context->slavelist[slave].eep_ser = etohl(eedat);
          ecx_readeeprom1(context, slave, ECT_SII_RXMBXADR); /* write mailbox address + mailboxsize */
       }
       for (slave = 1; slave <= *(context->slavecount); slave++)
@@ -1473,7 +1479,9 @@ int ecx_recover_slave(ecx_contextt *context, uint16 slave, int timeout)
           (ecx_readeeprom(context, slave, ECT_SII_MANUF, EC_TIMEOUTEEP) ==
              htoel(context->slavelist[slave].eep_man)) &&
           (ecx_readeeprom(context, slave, ECT_SII_REV, EC_TIMEOUTEEP) ==
-             htoel(context->slavelist[slave].eep_rev)))
+             htoel(context->slavelist[slave].eep_rev)) &&
+          (ecx_readeeprom(context, slave, ECT_SII_SER, EC_TIMEOUTEEP) ==
+             htoel(context->slavelist[slave].eep_ser)))
       {
          rval = ecx_FPWRw(context->port, EC_TEMPNODE, ECT_REG_STADR, htoes(configadr) , timeout);
          context->slavelist[slave].configadr = configadr;
