@@ -50,6 +50,7 @@
 #include <sensor_msgs/Joy.h>
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <tf/transform_broadcaster.h>
 
 namespace kelo {
@@ -97,6 +98,7 @@ protected:
 	void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
 	void currentMaxCallback(const std_msgs::Float32& msg);
 	void resetCallback(const std_msgs::Empty& msg);
+	void enableCallback(const std_msgs::Int32MultiArray& msg);
 
 	virtual void joyCallbackImpl(const sensor_msgs::Joy::ConstPtr& joy);
 
@@ -122,6 +124,7 @@ protected:
 	ros::Subscriber joySubscriber;
 	ros::Subscriber cmdVelSubscriber;
 	ros::Subscriber resetSubscriber;
+	ros::Subscriber enableSubscriber;
 		
 	double s_w; //caster offset of a smartWheel
 	double d_w; //distance between the left and the right wheel

@@ -67,6 +67,7 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	}
 
 	nWheels = wheelConfigs.size();
+	wheelEnabled.resize(nWheels, true);
 
 	// controller parameters
 	currentStop = 1;
@@ -374,11 +375,9 @@ int PlatformDriver::getDriverStatus() {
 	if (timestampError)
 		status |= DRIVER_ERROR_TIMESTAMP;
 
-	if (ethercatWkcError) {
-		//std::cout << "EtherCAT WKC error" << std::endl;
+	if (ethercatWkcError)
 		status |= DRIVER_ERROR_ETHERCAT_WKC;
-	}
-	
+
 	if (statusError)
 		status |= DRIVER_ERROR_STATUS;
 
@@ -389,6 +388,28 @@ void PlatformDriver::resetErrorFlags() {
 	ethercatWkcError = false;
 	statusError = false;
 	timestampError = false;
+
+	for (int i = 0; i < nWheels; i++) {
+		txpdo1_t* swData = getWheelProcessData(i);
+		wheel_sensor_ts[i] = swData->sensor_ts;
+		wheel_setpoint_ts[i] = swData->setpoint_ts;
+	}
+}
+
+void PlatformDriver::setWheelsEnable(std::vector<int> values) {
+	if (wheelEnabled.size() != values.size()) {
+		std::cout << "Number of wheels do not match. Ignoring enable command" << std::endl;
+		return;
+	}
+	
+	for (int i = 0; i < wheelEnabled.size(); i++) {
+		if (values[i] == 1)
+			wheelEnabled[i] = true;
+		else if (values[i] == 0)
+			wheelEnabled[i] = false;
+		else
+			std::cout << "wheel enable value is invalid. Ignoring enable value" << std::endl;
+	}
 }
 
 int PlatformDriver::checkSmartwheelTimestamp() {
@@ -406,7 +427,7 @@ int PlatformDriver::checkSmartwheelTimestamp() {
 			wheel_setpoint_ts[i] = swData->setpoint_ts;
 		else
 			error = true;
-		
+
 		if (error != wheelData[i].errorTimestamp) {
 			if (error)
 				std::cout << "Timestamp error wheel " << i << ".\n";
@@ -419,13 +440,15 @@ int PlatformDriver::checkSmartwheelTimestamp() {
 	}
 	
 	int result = 4;
-	if (swOK)
+	if (swOK) {
 		result = 2;
-		
+		timestampError = false;
+	}
+
 	if (!swOK)
 		timestampError = true;
-	
-	return result;		
+
+	return result;
 }
 
 void PlatformDriver::SetState(int wheel, uint16_t state) {
@@ -475,7 +498,7 @@ void PlatformDriver::updateEncoders() {
 void PlatformDriver::doStop() {
 	rxpdo1_t rxdata;
 	rxdata.timestamp = current_ts + 100 * 1000; // TODO
-	rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
+	//rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 	rxdata.limit1_p = currentStop;
 	rxdata.limit1_n = -currentStop;
 	rxdata.limit2_p = currentStop;
@@ -484,15 +507,21 @@ void PlatformDriver::doStop() {
 	rxdata.setpoint2 = 0;
 	double totalDiffAngle = 0;
 
-	for (unsigned int i = 0; i < nWheels; i++)
+	for (unsigned int i = 0; i < nWheels; i++) {
+		if (wheelEnabled[i])
+			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
+		else
+			rxdata.command1 = COM1_MODE_VELOCITY;
+		
 		setWheelProcessData(i, &rxdata);
+	}
 }
 
 void PlatformDriver::doControl() {
 	/* initialise struct to be sent to wheels */
 	rxpdo1_t rxdata;
 	rxdata.timestamp = current_ts + 100 * 1000; // TODO
-	rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
+	//rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 	rxdata.limit1_p = currentDrive;
 	rxdata.limit1_n = -currentDrive;
 	rxdata.limit2_p = currentDrive;
@@ -504,6 +533,11 @@ void PlatformDriver::doControl() {
 	velocityPlatformController.calculatePlatformRampedVelocities();
 	
 	for (size_t i = 0; i < nWheels; i++) {
+		if (wheelEnabled[i])
+			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
+		else
+			rxdata.command1 = COM1_MODE_VELOCITY;
+		
 		txpdo1_t* wheel_data = getWheelProcessData(i);
 
 		float setpoint1, setpoint2;

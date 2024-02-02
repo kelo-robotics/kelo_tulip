@@ -141,6 +141,7 @@ public:
 	int getDriverStatus();
 
 	void resetErrorFlags();
+	void setWheelsEnable(std::vector<int> values);
 
 	std::vector<double> getEncoderValue(int idx);
 
@@ -180,7 +181,8 @@ protected:
 	bool encoderInitialized;
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
-
+	std::vector<bool> wheelEnabled;
+	
 	int firstWheel, nWheels;
 	std::vector<WheelConfig> wheelConfigs;
 	std::vector<WheelData> wheelData;

@@ -51,6 +51,7 @@
 #include <std_msgs/Empty.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int32MultiArray.h>
 
 namespace kelo {
 
@@ -162,6 +163,7 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 	joySubscriber = nh.subscribe("/joy", 1000, &PlatformDriverROS::joyCallback, this);
 	cmdVelSubscriber = nh.subscribe("/cmd_vel", 1000, &PlatformDriverROS::cmdVelCallback, this);
 	resetSubscriber = nh.subscribe("reset", 1, &PlatformDriverROS::resetCallback, this);
+	enableSubscriber = nh.subscribe("wheels_enable", 1, &PlatformDriverROS::enableCallback, this);
 //	ros::Subscriber currentMaxSubscriber = nh.subscribe("current_max", 1, currentMaxCallback);
 	odom_broadcaster = new tf::TransformBroadcaster();
 
@@ -573,5 +575,10 @@ void PlatformDriverROS::resetCallback(const std_msgs::Empty& msg) {
 	ROS_INFO("Reset error flags.");
 	driver->resetErrorFlags();
 }
+
+void PlatformDriverROS::enableCallback(const std_msgs::Int32MultiArray& msg) {
+	driver->setWheelsEnable(msg.data);
+}
+
 
 } //namespace kelo
