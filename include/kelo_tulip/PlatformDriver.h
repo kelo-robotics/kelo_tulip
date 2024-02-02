@@ -127,6 +127,8 @@ public:
 	void setMaxvlinacc(double x);
 	void setMaxangleacc(double x);
 	void setMaxvaacc(double x);
+	void setMaxvlindec(double x);
+	void setMaxvadec(double x);
 	void setFactorAngleaccVlin(double x);
 	void setFractionVelTolerance(double x);
 	void setFractionFactor(double x);

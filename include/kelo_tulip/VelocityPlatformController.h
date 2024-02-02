@@ -65,9 +65,12 @@ namespace kelo
 
             void initialise(const std::vector<WheelConfig>& wheel_configs);
 
-            void setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular);
-            void setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular);
-            void setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular);
+            void setPlatformMaxLinVelocity(float max_vel_linear);
+            void setPlatformMaxAngVelocity(float max_vel_angular);
+            void setPlatformMaxLinAcceleration(float max_acc_linear);
+            void setPlatformMaxAngAcceleration(float max_acc_angular);
+            void setPlatformMaxLinDeceleration(float max_dec_linear);
+            void setPlatformMaxAngDeceleration(float max_dec_angular);
             
             void calculatePlatformRampedVelocities();
 
