@@ -1,6 +1,13 @@
 num_wheels: 4
 device: eno1
 
+#vlin_max: 1.2  # m / s
+#va_max: 1.1  # rad / s
+#vlin_acc_max: 0.4  # m / s^2
+#vlin_dec_max: 1.0  # m / s^2
+#va_acc_max: 0.5  # rad / s^2
+#va_dec_max: 1.0  # rad / s^2
+
 modules:
   platform_driver:
     type: platform_driver
