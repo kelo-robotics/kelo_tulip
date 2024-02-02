@@ -1,28 +1,32 @@
 num_wheels: 4
+device: eno1
 
-device: enp2s0
+modules:
+  platform_driver:
+    type: platform_driver
+    controller: velocity_platform_controller
 
 wheel0:
-  ethercat_number: 2
-  x: 0.175
-  y: 0.1605
-  a: -2.50
+  ethercat_number: 3
+  x: 0.233
+  y: 0.1165
+  a: 0
 
 wheel1:
-  ethercat_number: 3
-  x: -0.175
-  y: 0.1605
-  a: -1.25
+  ethercat_number: 5
+  x: -0.233
+  y: 0.1165
+  a: 0
 
 wheel2:
-  ethercat_number: 5
-  x: -0.175
-  y: -0.1607
-  a: -2.14
+  ethercat_number: 7
+  x: -0.233
+  y: -0.1165
+  a: 0
 
 wheel3:
-  ethercat_number: 6
-  x: 0.175
-  y: -0.1605
-  a: 1.49
+  ethercat_number: 9
+  x: 0.233
+  y: -0.1165
+  a: 0
 
