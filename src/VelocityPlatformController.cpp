@@ -109,30 +109,42 @@ namespace kelo
             wheel_param.wheel_diameter = wheel_diameter;
             wheel_param.max_pivot_error = M_PI * 0.25f;
 
-	          wheel_param.pivot_position.x = wheel_configs[i].x;
-	          wheel_param.pivot_position.y = wheel_configs[i].y;
-	          wheel_param.pivot_offset = wheel_configs[i].a;
+            wheel_param.pivot_position.x = wheel_configs[i].x;
+            wheel_param.pivot_position.y = wheel_configs[i].y;
+            wheel_param.pivot_offset = wheel_configs[i].a;
 
             wheel_params_.push_back(wheel_param);
         }
     }
 
-    void VelocityPlatformController::setPlatformMaxVelocity(float max_vel_linear, float max_vel_angular)
+    void VelocityPlatformController::setPlatformMaxLinVelocity(float max_vel_linear)
     {
-    	platform_limits_.max_vel_linear = max_vel_linear;
-    	platform_limits_.max_vel_angular = max_vel_angular;
+        platform_limits_.max_vel_linear = max_vel_linear;
+    }
+    
+    void VelocityPlatformController::setPlatformMaxAngVelocity(float max_vel_angular)
+    {
+        platform_limits_.max_vel_angular = max_vel_angular;
     }
 
-    void VelocityPlatformController::setPlatformMaxAcceleration(float max_acc_linear, float max_acc_angular)
+    void VelocityPlatformController::setPlatformMaxLinAcceleration(float max_acc_linear)
     {
-    	platform_limits_.max_acc_linear = max_acc_linear;
-    	platform_limits_.max_acc_angular = max_acc_angular;
+        platform_limits_.max_acc_linear = max_acc_linear;
     }
 
-    void VelocityPlatformController::setPlatformMaxDeceleration(float max_dec_linear, float max_dec_angular)
+    void VelocityPlatformController::setPlatformMaxAngAcceleration(float max_acc_angular)
     {
-    	platform_limits_.max_dec_linear = max_dec_linear;
-    	platform_limits_.max_dec_angular = max_dec_angular;
+        platform_limits_.max_acc_angular = max_acc_angular;
+    }
+
+    void VelocityPlatformController::setPlatformMaxLinDeceleration(float max_dec_linear)
+    {
+        platform_limits_.max_dec_linear = max_dec_linear;
+    }
+    
+    void VelocityPlatformController::setPlatformMaxAngDeceleration(float max_dec_angular)
+    {
+        platform_limits_.max_dec_angular = max_dec_angular;
     }
             
     void VelocityPlatformController::calculatePlatformRampedVelocities()

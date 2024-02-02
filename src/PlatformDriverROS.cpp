@@ -126,10 +126,14 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 		driver->setMaxva(x);
 	if (nh.getParam("vlin_acc_max", x))
 		driver->setMaxvlinacc(x);
+	if (nh.getParam("vlin_dec_max", x))
+		driver->setMaxvlindec(x);
 	if (nh.getParam("angle_acc_max", x))
 		driver->setMaxangleacc(x);
 	if (nh.getParam("va_acc_max", x))
 		driver->setMaxvaacc(x);
+	if (nh.getParam("va_dec_max", x))
+		driver->setMaxvadec(x);
 
 	joyVlinMax = driver->getMaxvlin();
 	joyVaMax = driver->getMaxva();

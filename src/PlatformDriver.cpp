@@ -311,6 +311,7 @@ void PlatformDriver::setCanChangeActive() {
 
 void PlatformDriver::setMaxvlin(double x) {
 	maxvlin = x;
+	velocityPlatformController.setPlatformMaxLinVelocity(x);
 }
 
 double PlatformDriver::getMaxvlin() {
@@ -319,6 +320,7 @@ double PlatformDriver::getMaxvlin() {
 
 void PlatformDriver::setMaxva(double x) {
 	maxva = x;
+	velocityPlatformController.setPlatformMaxAngVelocity(x);
 }
 
 double PlatformDriver::getMaxva() {
@@ -327,6 +329,7 @@ double PlatformDriver::getMaxva() {
 
 void PlatformDriver::setMaxvlinacc(double x) {
 	maxvlinacc = x;
+	velocityPlatformController.setPlatformMaxLinAcceleration(x);
 }
 
 void PlatformDriver::setMaxangleacc(double x) {
@@ -335,6 +338,15 @@ void PlatformDriver::setMaxangleacc(double x) {
 
 void PlatformDriver::setMaxvaacc(double x) {
 	maxvaacc = x;
+	velocityPlatformController.setPlatformMaxAngAcceleration(x);
+}
+
+void PlatformDriver::setMaxvlindec(double x) {
+	velocityPlatformController.setPlatformMaxLinDeceleration(x);
+}
+
+void PlatformDriver::setMaxvadec(double x) {
+	velocityPlatformController.setPlatformMaxAngDeceleration(x);
 }
 
 void PlatformDriver::reconnectSlave(int slave) {
