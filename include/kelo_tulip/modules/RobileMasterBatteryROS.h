@@ -45,10 +45,16 @@
 #ifndef MODULES_ROBILEMASTERBATTERYROS_H
 #define MODULES_ROBILEMASTERBATTERYROS_H
 
+#include <memory>
+
 #include "kelo_tulip/modules/RobileMasterBattery.h"
 #include "kelo_tulip/EtherCATModuleROS.h"
-#include <std_msgs/Empty.h>
-#include <std_msgs/Int32.h>
+#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/float64_multi_array.hpp>
+
+using std::placeholders::_1;
 
 namespace kelo {
 
@@ -60,7 +66,7 @@ public:
 	RobileMasterBatteryROS();
 	virtual ~RobileMasterBatteryROS();
 
-	virtual bool init(ros::NodeHandle& nh, std::string configPrefix);
+	virtual bool init(rclcpp::Node::SharedPtr nh, std::string configPrefix);
 
 	virtual bool step();
 
@@ -69,22 +75,22 @@ public:
 	virtual EtherCATModule* getEtherCATModule();
 	
 protected:
-	void callbackResetError(const std_msgs::Empty& msg);
-	void callbackShutdown(const std_msgs::Int32& msg);
-	void callbackChargerStart(const std_msgs::Int32& msg);
-	void callbackChargerStop(const std_msgs::Int32& msg);
+	void callbackResetError(const std_msgs::msg::Empty::SharedPtr msg) const;
+	void callbackShutdown(const std_msgs::msg::Int32::SharedPtr msg) const;
+	void callbackChargerStart(const std_msgs::msg::Int32::SharedPtr msg) const;
+	void callbackChargerStop(const std_msgs::msg::Int32::SharedPtr msg) const;
 
 	void publishEthercatInput();
 
 	RobileMasterBattery* battery;
 	
-	ros::Publisher batteryPublisher;
-	ros::Publisher processDataInputPublisher;
-	ros::Subscriber resetErrorSubscriber;
-	ros::Subscriber shutdownSubscriber;
-	ros::Subscriber chargerStartSubscriber;
-	ros::Subscriber chargerStopSubscriber;
-		
+	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr batteryPublisher;
+	rclcpp::Publisher<std_msgs::msg::Float64MultiArray>::SharedPtr processDataInputPublisher;
+	rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr resetErrorSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr shutdownSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr chargerStartSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr chargerStopSubscriber;
+
 	std::string topicPrefix;
 };
 

@@ -42,8 +42,6 @@
  ******************************************************************************/
 
 #include "kelo_tulip/modules/RobileMasterBatteryROS.h"
-#include <std_msgs/Float32.h>
-#include <std_msgs/Float64MultiArray.h>
 
 namespace kelo {
 
@@ -56,14 +54,16 @@ RobileMasterBatteryROS::RobileMasterBatteryROS() : EtherCATModuleROS()
 RobileMasterBatteryROS::~RobileMasterBatteryROS() {
 }
 
-bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix) {
+bool RobileMasterBatteryROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefix) {
+	nh->declare_parameter(configPrefix + "ethercat_number", 0);
+	nh->declare_parameter("robile_master_battery_ethercat_number", 0);
+
 	// get EtherCAT slave number
-	int ethercatNumber = 0;
-	nh.param(configPrefix + "ethercat_number", ethercatNumber, 0);
-	if (!ethercatNumber > 0) {
+	int ethercatNumber = nh->get_parameter(configPrefix + "ethercat_number").as_int();
+	if (!(ethercatNumber > 0)) {
 		// Try deprecated alternative method
-		nh.param("robile_master_battery_ethercat_number", ethercatNumber, 0);
-		if (!ethercatNumber > 0) {
+		ethercatNumber = nh->get_parameter("robile_master_battery_ethercat_number").as_int();
+		if (!(ethercatNumber > 0)) {
 			std::cerr << "EtherCAT number for robile master battery not set." << std::endl;
 			return false;
 		}
@@ -75,22 +75,22 @@ bool RobileMasterBatteryROS::init(ros::NodeHandle& nh, std::string configPrefix)
 		return false;
 
 	// setup publishers and subscribers
-	batteryPublisher = nh.advertise<std_msgs::Float32>(topicPrefix + "voltage", 10);
-	processDataInputPublisher = nh.advertise<std_msgs::Float64MultiArray>(topicPrefix + "ethercat_input", 10);
+	batteryPublisher = nh->create_publisher<std_msgs::msg::Float32>(topicPrefix + "voltage", 10);
+	processDataInputPublisher = nh->create_publisher<std_msgs::msg::Float64MultiArray>(topicPrefix + "ethercat_input", 10);
 
-	resetErrorSubscriber = nh.subscribe(topicPrefix + "reset_error", 1, &RobileMasterBatteryROS::callbackResetError, this);
-	shutdownSubscriber = nh.subscribe(topicPrefix + "shutdown", 1, &RobileMasterBatteryROS::callbackShutdown, this);
-	chargerStartSubscriber = nh.subscribe(topicPrefix + "charger_start", 1, &RobileMasterBatteryROS::callbackChargerStart, this);
-	chargerStopSubscriber = nh.subscribe(topicPrefix + "charger_stop", 1, &RobileMasterBatteryROS::callbackChargerStop, this);
+	resetErrorSubscriber = nh->create_subscription<std_msgs::msg::Empty>(topicPrefix + "reset_error", 1, std::bind(&RobileMasterBatteryROS::callbackResetError, this, std::placeholders::_1));
+	shutdownSubscriber = nh->create_subscription<std_msgs::msg::Int32>(topicPrefix + "shutdown", 1, std::bind(&RobileMasterBatteryROS::callbackShutdown, this, std::placeholders::_1));
+	chargerStartSubscriber = nh->create_subscription<std_msgs::msg::Int32>(topicPrefix + "charger_start", 1, std::bind(&RobileMasterBatteryROS::callbackChargerStart, this, std::placeholders::_1));
+	chargerStopSubscriber = nh->create_subscription<std_msgs::msg::Int32>(topicPrefix + "charger_stop", 1, std::bind(&RobileMasterBatteryROS::callbackChargerStop, this, std::placeholders::_1));
 
 	return true;
 }
 
 bool RobileMasterBatteryROS::step() {
 	// publish voltage
-	std_msgs::Float32 msgBattery;
+	std_msgs::msg::Float32 msgBattery;
 	msgBattery.data = battery->getVoltage();
-	batteryPublisher.publish(msgBattery);
+	batteryPublisher->publish(msgBattery);
 
 	publishEthercatInput();
 
@@ -105,26 +105,26 @@ EtherCATModule* RobileMasterBatteryROS::getEtherCATModule() {
 	return battery;
 }
 
-void RobileMasterBatteryROS::callbackResetError(const std_msgs::Empty& msg) {
+void RobileMasterBatteryROS::callbackResetError(const std_msgs::msg::Empty::SharedPtr msg) const {
 	battery->resetError();
 }
 
-void RobileMasterBatteryROS::callbackShutdown(const std_msgs::Int32& msg) {
-	battery->shutdown(msg.data);
+void RobileMasterBatteryROS::callbackShutdown(const std_msgs::msg::Int32::SharedPtr msg) const {
+	battery->shutdown(msg->data);
 }
 
-void RobileMasterBatteryROS::callbackChargerStart(const std_msgs::Int32& msg) {
+void RobileMasterBatteryROS::callbackChargerStart(const std_msgs::msg::Int32::SharedPtr msg) const {
 	battery->startCharge();
 }
 
-void RobileMasterBatteryROS::callbackChargerStop(const std_msgs::Int32& msg) {
+void RobileMasterBatteryROS::callbackChargerStop(const std_msgs::msg::Int32::SharedPtr msg) const {
 	battery->stopCharge();
 }
 
 void RobileMasterBatteryROS::publishEthercatInput() {
-	std_msgs::Float64MultiArray msg;
+	std_msgs::msg::Float64MultiArray msg;
 	const RobileMasterBatteryProcessDataInput* input = battery->getProcessDataInput();
-	std_msgs::MultiArrayDimension dim;
+	std_msgs::msg::MultiArrayDimension dim;
 	dim.size = 1;
 
 	dim.label = "timestamp";
@@ -221,7 +221,7 @@ void RobileMasterBatteryROS::publishEthercatInput() {
 	msg.data.push_back(input->bmsm_BatData2);
 	msg.layout.dim.push_back(dim);
 
-	processDataInputPublisher.publish(msg);
+	processDataInputPublisher->publish(msg);
 }
 
 } //namespace kelo

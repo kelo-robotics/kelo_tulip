@@ -90,7 +90,7 @@ EtherCATMaster::EtherCATMaster(const EtherCATMaster&) {
 bool EtherCATMaster::initEthercat() {
 	if (!ethercatInitialized) {
 		if (!ecx_init(&ecx_context, const_cast<char*>(device.c_str()))) {
-			std::cout << "Failed to initialize EtherCAT on " << device << " with communication thread\n";
+			std::cout << "Failed to initialize EtherCAT on " << device << " with communication thread" << std::endl;
 			return false;
 		}
 		std::cout << "Initializing EtherCAT on " << device << "\n";

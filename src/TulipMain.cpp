@@ -44,12 +44,11 @@
 #include "kelo_tulip/EtherCATMaster.h"
 #include "kelo_tulip/PlatformDriverROS.h"
 #include "kelo_tulip/modules/RobileMasterBatteryROS.h"
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 // create and configure one module
-kelo::EtherCATModuleROS* createModule(ros::NodeHandle& nh, std::string moduleType, std::string moduleName, std::string configTag) {
-	kelo::EtherCATModuleROS* module = NULL;
-		
+kelo::EtherCATModuleROS* createModule(rclcpp::Node::SharedPtr nh, std::string moduleType, std::string moduleName, std::string configTag) {
+	kelo::EtherCATModuleROS* module = NULL;	
 	if (moduleType == "robile_master_battery") {
 		module = new kelo::RobileMasterBatteryROS();
 	} else if (moduleType == "platform_driver") {
@@ -76,7 +75,7 @@ kelo::EtherCATModuleROS* createModule(ros::NodeHandle& nh, std::string moduleTyp
 
 /*
 // step through all modules
-void stepModules(const ros::TimerEvent&) {
+void stepModules(const rclcpp::TimerEvent&) {
 		for (size_t i = 0; i < rosModules.size(); i++)
 			rosModules[i]->step();
 }
@@ -84,37 +83,56 @@ void stepModules(const ros::TimerEvent&) {
 
 int main (int argc, char** argv)
 {
-	ros::init (argc, argv, "platform_driver");
-	ros::NodeHandle nh("~");
+	rclcpp::init(argc, argv);
+	auto nh = rclcpp::Node::make_shared("platform_driver");
+
+	nh->declare_parameter("modules.list", std::vector<std::string>{}); 
+	nh->declare_parameter("start_retry_delay", 0);
+	nh->declare_parameter("robile_master_battery_ethercat_number", 0);
+	nh->declare_parameter("device", "");
 
 	std::vector<kelo::EtherCATModuleROS*> rosModules;
-	
-	// create modules by iterating through struct in config
-	XmlRpc::XmlRpcValue modulesXML;
-	std::string configModulesTag = "modules";
-	nh.getParam(configModulesTag, modulesXML);
-	if (modulesXML.getType() == XmlRpc::XmlRpcValue::TypeStruct)	{
-		for (XmlRpc::XmlRpcValue::const_iterator it = modulesXML.begin(); it != modulesXML.end(); ++it) {
-			if (it->second.getType() != XmlRpc::XmlRpcValue::TypeStruct)	{
-				std::cout << "Error: configuration for module " << it->first << " cannot be read." << std::endl;
-				return -1;
-			}
 
-			std::string moduleName = it->first;
-			std::string moduleType = it->second["type"];
-			std::string configTag = configModulesTag + "/" + moduleName + "/";
-			kelo::EtherCATModuleROS* module = createModule(nh, moduleType, moduleName, configTag);
+	// create modules by iterating through struct in config
+	std::string configModulesTag = "modules";
+	std::vector<std::string> moduleList = nh->get_parameter(configModulesTag + ".list").as_string_array();
+	for (unsigned int i = 0; i < moduleList.size(); i++) {
+		nh->declare_parameter(configModulesTag + "." + moduleList[i] + ".type", "");
+		std::string moduleName = moduleList[i];
+		std::string moduleType = nh->get_parameter(configModulesTag + "." + moduleList[i] + ".type").as_string();
+		std::string configTag = configModulesTag + "." + moduleName + ".";
+		kelo::EtherCATModuleROS* module = createModule(nh, moduleType, moduleName, configTag);
+		
+		if (!module)
+			return -1;
 			
-			if (!module)
-				return -1;
-				
-			rosModules.push_back(module);
-		}
+		rosModules.push_back(module);
 	}
 
+	//XmlRpc::XmlRpcValue modulesXML;
+	//std::string configModulesTag = "modules";
+	//nh.getParam(configModulesTag, modulesXML);
+	//if (modulesXML.getType() == XmlRpc::XmlRpcValue::TypeStruct)	{
+		//for (XmlRpc::XmlRpcValue::const_iterator it = modulesXML.begin(); it != modulesXML.end(); ++it) {
+			//if (it->second.getType() != XmlRpc::XmlRpcValue::TypeStruct)	{
+				//std::cout << "Error: configuration for module " << it->first << " cannot be read." << std::endl;
+				//return -1;
+			//}
+
+			//std::string moduleName = it->first;
+			//std::string moduleType = it->second["type"];
+			//std::string configTag = configModulesTag + "/" + moduleName + "/";
+			//kelo::EtherCATModuleROS* module = createModule(nh, moduleType, moduleName, configTag);
+			
+			//if (!module)
+				//return -1;
+				
+			//rosModules.push_back(module);
+		//}
+	//}
+
 	// legacy config mode for master battery
-	int robileMasterBatteryEthercatNumber = 0;
-	nh.param("robile_master_battery_ethercat_number", robileMasterBatteryEthercatNumber, 0);
+	int robileMasterBatteryEthercatNumber = nh->get_parameter("robile_master_battery_ethercat_number").as_int();
 	if (robileMasterBatteryEthercatNumber > 0) {	
 		kelo::EtherCATModuleROS* module = new kelo::RobileMasterBatteryROS();
 		if (!module || !module->init(nh, ""))
@@ -129,11 +147,8 @@ int main (int argc, char** argv)
 		etherCATmodules.push_back(rosModules[i]->getEtherCATModule());
 
 	// create and configure EtherCAT master
-	std::string device;
-	nh.getParam("device", device);
-
-	double delayRetry = 0;
-	nh.getParam("start_retry_delay", delayRetry);
+	std::string device = nh->get_parameter("device").as_string();
+	int delayRetry = nh->get_parameter("start_retry_delay").as_int();
 
 	kelo::EtherCATMaster* master = new kelo::EtherCATMaster(device, etherCATmodules);
 	if (!master) {
@@ -144,24 +159,23 @@ int main (int argc, char** argv)
 	// initialize EtherCAT
 	while (!master->initEthercat()) {
 		if (delayRetry == 0) {
-			ROS_ERROR("Failed to initialize EtherCAT");
+			RCLCPP_ERROR(nh->get_logger(), "Failed to initialize EtherCAT");
 			return -1;
 		}
-		ROS_ERROR("Failed to initialize EtherCAT, will retry in %.2f s.", delayRetry);
-		ros::WallDuration(delayRetry).sleep();
+		RCLCPP_ERROR(nh->get_logger(), "Failed to initialize EtherCAT, will retry in %d s.", delayRetry);
+		std::this_thread::sleep_for(std::chrono::seconds(delayRetry));
 	}
 	
 	// ROS main loop
-	ros::Rate rate(20.0f); // hz
-	while (ros::ok()) {
-		ros::spinOnce();		
+	rclcpp::Rate rate(20.0f); // hz
+	while (rclcpp::ok()) {
+		rclcpp::spin_some(nh);		
 
 		for (size_t i = 0; i < rosModules.size(); i++)
 			rosModules[i]->step();
 			
 		rate.sleep();
 	}
-	
 
 	// delete and close everything
 	for (size_t i = 0; i < rosModules.size(); i++)
@@ -169,7 +183,7 @@ int main (int argc, char** argv)
 
 	delete master;
 	
-	ros::shutdown();
+	rclcpp::shutdown();
 	return 0;
 }
 

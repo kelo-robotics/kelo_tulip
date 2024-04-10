@@ -44,15 +44,23 @@
 #ifndef KELOTULIP_PLATFORMDRIVERROS_H
 #define KELOTULIP_PLATFORMDRIVERROS_H
 
+#include <memory>
+
 #include "kelo_tulip/EtherCATModuleROS.h"
 #include "kelo_tulip/PlatformDriver.h"
-#include "kelo_tulip/KeloDrivesInput.h"
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/Joy.h>
-#include <std_msgs/Empty.h>
-#include <std_msgs/Float32.h>
-#include <std_msgs/Int32MultiArray.h>
-#include <tf/transform_broadcaster.h>
+#include "kelo_tulip/msg/kelo_drives_input.hpp"
+#include "tf2_ros/transform_broadcaster.h"
+#include "tf2/LinearMath/Quaternion.h"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/imu.hpp>
+#include <sensor_msgs/msg/joy.hpp>
+#include <std_msgs/msg/empty.hpp>
+#include <std_msgs/msg/float32.hpp>
+#include <std_msgs/msg/int32.hpp>
+#include <std_msgs/msg/int32_multi_array.hpp>
+
+using std::placeholders::_1;
 
 namespace kelo {
 
@@ -66,7 +74,7 @@ public:
 
 	//! Initialize this module, must be overridden.
 	//! Returns true if module could be successfully initialized.
-	virtual bool init(ros::NodeHandle& nh, std::string configPrefix);
+	virtual bool init(rclcpp::Node::SharedPtr nh, std::string configPrefix);
 
 	//! Function that is continously called by ROS main loop to publish or process data.
 	//! Returns true if module can continue to run.
@@ -81,27 +89,27 @@ public:
 protected:
 	virtual kelo::PlatformDriver* createDriver();
 	
-	void readWheelModels(const ros::NodeHandle& nh);
-	void readWheelConfig(const ros::NodeHandle& nh);
+	void readWheelModels(const rclcpp::Node::SharedPtr nh);
+	void readWheelConfig(const rclcpp::Node::SharedPtr nh);
 	void checkAndPublishSmartWheelStatus();
 	
 	void initializeEncoderValue();
 	void calculateRobotVelocity(double& vx, double& vy, double& va, double& encDisplacement);
 	void calculateRobotPose(double vx, double vy, double va);
 	void publishOdometry(double vx, double vy, double va);
-	void createOdomToBaseLinkTransform(geometry_msgs::TransformStamped& odom_trans);
+	void createOdomToBaseLinkTransform(geometry_msgs::msg::TransformStamped& odom_trans);
 
 	void publishProcessDataInput();
 	void publishBattery();
 	void publishIMU();
 
-	void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
-	void cmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
-	void currentMaxCallback(const std_msgs::Float32& msg);
-	void resetCallback(const std_msgs::Empty& msg);
-	void enableCallback(const std_msgs::Int32MultiArray& msg);
+	void joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy);
+	void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) const;
+	void currentMaxCallback(const std_msgs::msg::Float32::SharedPtr msg) const;
+	void resetCallback(const std_msgs::msg::Empty::SharedPtr msg) const;
+	void enableCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg) const;
 
-	virtual void joyCallbackImpl(const sensor_msgs::Joy::ConstPtr& joy);
+	virtual void joyCallbackImpl(const sensor_msgs::msg::Joy::SharedPtr joy);
 
 	kelo::PlatformDriver* driver;
 	std::vector<kelo::WheelConfig> wheelConfigs;
@@ -109,24 +117,24 @@ protected:
 	std::vector<kelo::EtherCATModuleROS*> wheelModules;
 	std::map<std::string, kelo::WheelModel> wheelModels;
 
-	ros::Publisher processDataInputPublisher;
-	ros::Publisher odomPublisher;
-	ros::Publisher odomInitializedPublisher;
-	ros::Publisher mileagePublisher;
-	ros::Publisher imuPublisher;
+	rclcpp::Publisher<kelo_tulip::msg::KeloDrivesInput>::SharedPtr processDataInputPublisher;
+	rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odomPublisher;
+	rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr odomInitializedPublisher;
+	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr mileagePublisher;
+	rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
 	ros::Publisher shockPublisher;
-	//ros::Publisher valuesPublisher;
-	ros::Publisher batteryPublisher;
-	ros::Publisher errorPublisher;
-	//ros::Publisher timestampPublisher;
-	ros::Publisher statusPublisher;
+	//rclcpp::Publisher<>::SharedPtr valuesPublisher;
+	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr batteryPublisher;
+	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr errorPublisher;
+	//rclcpp::Publisher<std_msgs::msg::UInt64MultiArray>::SharedPtr timestampPublisher;
+	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr statusPublisher;
 
-	tf::TransformBroadcaster* odom_broadcaster;
-
-	ros::Subscriber joySubscriber;
-	ros::Subscriber cmdVelSubscriber;
-	ros::Subscriber resetSubscriber;
-	ros::Subscriber enableSubscriber;
+	std::unique_ptr<tf2_ros::TransformBroadcaster> odom_broadcaster;
+	
+	rclcpp::Subscription<sensor_msgs::msg::Joy>::SharedPtr joySubscriber;
+	rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmdVelSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr resetSubscriber;
+	rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr enableSubscriber;
 		
 	double s_w; //caster offset of a smartWheel
 	double d_w; //distance between the left and the right wheel

@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="kelo_tulip" exec="platform_driver" name="platform_driver" output="screen">
+        <param from="$(find-pkg-share kelo_tulip)/config/example.yaml"/>
+    </node>
+
+</launch>

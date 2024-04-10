@@ -45,7 +45,7 @@
 #define ETHERCATMODULEROS_H
 
 #include "kelo_tulip/EtherCATModule.h"
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
 namespace kelo {
 
@@ -64,7 +64,7 @@ public:
 
 	//! Initialize this module, must be overridden.
 	//! Returns true if module could be successfully initialized.
-	virtual bool init(ros::NodeHandle& nh, std::string configPrefix) = 0;
+	virtual bool init(rclcpp::Node::SharedPtr nh, std::string configPrefix) = 0;
 
 	//! Function that is continously called by ROS main loop to publish or process data.
 	//! Returns true if module can continue to run.
@@ -78,7 +78,7 @@ public:
 
 protected:
 	//! Global NodeHandle, by default set in init() function.
-	ros::NodeHandle nh;
+	std::shared_ptr<rclcpp::Node> nh;
 };
 
 } // namespace kelp
