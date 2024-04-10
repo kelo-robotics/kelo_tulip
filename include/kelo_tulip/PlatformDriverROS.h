@@ -49,6 +49,7 @@
 #include "kelo_tulip/EtherCATModuleROS.h"
 #include "kelo_tulip/PlatformDriver.h"
 #include "kelo_tulip/msg/kelo_drives_input.hpp"
+#include "kelo_tulip/msg/shock_bin.hpp"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2/LinearMath/Quaternion.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
@@ -122,7 +123,7 @@ protected:
 	rclcpp::Publisher<std_msgs::msg::Empty>::SharedPtr odomInitializedPublisher;
 	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr mileagePublisher;
 	rclcpp::Publisher<sensor_msgs::msg::Imu>::SharedPtr imuPublisher;
-	ros::Publisher shockPublisher;
+	rclcpp::Publisher<kelo_tulip::msg::ShockBin>::SharedPtr shockPublisher;
 	//rclcpp::Publisher<>::SharedPtr valuesPublisher;
 	rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr batteryPublisher;
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr errorPublisher;
