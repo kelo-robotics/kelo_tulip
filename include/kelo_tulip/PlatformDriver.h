@@ -188,7 +188,8 @@ protected:
 
 	ec_slavet* ecx_slaves;
 	ecx_contextt* ecx_contextp;
-	
+	int ecx_slavecount;
+
 	std::vector<EtherCATModule*> modules;
 
 	std::vector<txpdo1_t> processData;

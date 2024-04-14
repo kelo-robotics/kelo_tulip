@@ -339,7 +339,7 @@ void PlatformDriverROS::readWheelConfig(const rclcpp::Node::SharedPtr nh) {
 
 void PlatformDriverROS::checkAndPublishSmartWheelStatus() {
 	int status = driver->getDriverStatus();
-	int state = (status & 0x000000ff);
+	// int state = (status & 0x000000ff);
 	int error = (status & 0xffffff00);
 		
 	std_msgs::msg::Int32 statusMsg;

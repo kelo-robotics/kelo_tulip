@@ -96,6 +96,7 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
    struct sockaddr_ll sll;
    int *psock;
    pthread_mutexattr_t mutexattr;
+   printf("ecx_setupnic\n");
 
    rval = 0;
    if (secondary)
@@ -144,6 +145,7 @@ int ecx_setupnic(ecx_portt *port, const char *ifname, int secondary)
    }
    /* we use RAW packet socket, with packet type ETH_P_ECAT */
    *psock = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ECAT));
+   printf("Open socket response %d\n", *psock);
 
    timeout.tv_sec =  0;
    timeout.tv_usec = 1;

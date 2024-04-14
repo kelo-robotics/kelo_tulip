@@ -121,6 +121,7 @@ PlatformDriver::PlatformDriver(const PlatformDriver&) {
 
 bool PlatformDriver::initEtherCAT2(ecx_contextt* ecx_context, int ecx_slavecount) {
 	this->ecx_contextp = ecx_context;
+	this->ecx_slavecount = ecx_slavecount;
 	return true;
 }
 
@@ -158,7 +159,7 @@ int PlatformDriver::float2bin(float accel) {
 #define NSPERSEC 1000000000
 
 void PlatformDriver::updateShock() {
-	for (unsigned int i = 0; i < nWheels; i++) {
+	for (int i = 0; i < nWheels; i++) {
 		uint64_t currentImu_ts = processData[i].imu_ts;
 		struct shockSet *shockp = &shockList[i];
 		int writeSet = shockp->writeSet;
@@ -199,13 +200,13 @@ void PlatformDriver::updateShock() {
 		if(currentImu_ts > sDatap->last_ts) {
 			sDatap->last_ts = currentImu_ts;
 			int binX = float2bin(processData[i].accel_x);
-			if(binX > sDatap->maxX) sDatap->maxX = binX;
+			if(binX > (int)sDatap->maxX) sDatap->maxX = binX;
 			sDatap->binX[binX]++;
 			int binY = float2bin(processData[i].accel_y);
-			if(binY> sDatap->maxY) sDatap->maxY = binY;
+			if(binY> (int)sDatap->maxY) sDatap->maxY = binY;
 			sDatap->binY[binY]++;
 			int binZ = float2bin(processData[i].accel_z);
-			if(binZ > sDatap->maxZ) sDatap->maxZ = binZ;
+			if(binZ > (int)sDatap->maxZ) sDatap->maxZ = binZ;
 			sDatap->binZ[binZ]++;
 		}
 	}
@@ -214,7 +215,7 @@ void PlatformDriver::updateShock() {
 bool PlatformDriver::step() {
 	stepCount++;
 	lastProcessData = processData;
-	for (unsigned int i = 0; i < nWheels; i++)
+	for (int i = 0; i < nWheels; i++)
 		processData[i] = *getWheelProcessData(i);
 
 	// TODO check if should take timestamp differently, or from each wheel separately
@@ -243,7 +244,7 @@ bool PlatformDriver::stepInit() {
 	doStop();
 
 	bool ready = true;
-	for (unsigned int wheel = 0; wheel < nWheels; wheel++)
+	for (int wheel = 0; wheel < nWheels; wheel++)
 		if (!hasWheelStatusEnabled(wheel) || hasWheelStatusError(wheel))
 			ready = false;
 	
@@ -350,7 +351,7 @@ void PlatformDriver::setMaxvadec(double x) {
 }
 
 void PlatformDriver::reconnectSlave(int slave) {
-	flagReconnectSlave = true;
+	if(slave >= 0) flagReconnectSlave = true;
 }
 
 txpdo1_t* PlatformDriver::getWheelProcessData(unsigned int wheel) {
@@ -408,7 +409,7 @@ bool PlatformDriver::hasWheelStatusError(unsigned int wheel) {
 }
 
 void PlatformDriver::updateStatusError() {
-	for (unsigned int i = 0; i < nWheels; i++) {
+	for (int i = 0; i < nWheels; i++) {
 		if (hasWheelStatusError(i)) {
 			int s1 = processData[i].status1;
 			int s2 = processData[i].status2;		
@@ -466,7 +467,7 @@ void PlatformDriver::setWheelsEnable(std::vector<int> values) {
 		return;
 	}
 	
-	for (int i = 0; i < wheelEnabled.size(); i++) {
+	for (int i = 0; i < (int)wheelEnabled.size(); i++) {
 		if (values[i] == 1)
 			wheelEnabled[i] = true;
 		else if (values[i] == 0)
@@ -569,9 +570,8 @@ void PlatformDriver::doStop() {
 	rxdata.limit2_n = -currentStop;
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
-	double totalDiffAngle = 0;
 
-	for (unsigned int i = 0; i < nWheels; i++) {
+	for (int i = 0; i < nWheels; i++) {
 		if (wheelEnabled[i])
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 		else
@@ -596,7 +596,7 @@ void PlatformDriver::doControl() {
 	// update desired velocity of platform, based on target velocity and veloity ramps
 	velocityPlatformController.calculatePlatformRampedVelocities();
 	
-	for (size_t i = 0; i < nWheels; i++) {
+	for (int i = 0; i < nWheels; i++) {
 		if (wheelEnabled[i])
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 		else

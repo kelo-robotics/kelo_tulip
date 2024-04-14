@@ -90,7 +90,7 @@ EtherCATMaster::EtherCATMaster(const EtherCATMaster&) {
 bool EtherCATMaster::initEthercat() {
 	if (!ethercatInitialized) {
 		if (!ecx_init(&ecx_context, const_cast<char*>(device.c_str()))) {
-			std::cout << "Failed to initialize EtherCAT on " << device << " with communication thread" << std::endl;
+			std::cout << "Failed to initialize EtherCAT on " << device << " with communication thread " << std::endl;
 			return false;
 		}
 		std::cout << "Initializing EtherCAT on " << device << "\n";
@@ -182,16 +182,16 @@ bool EtherCATMaster::initEthercat() {
 
 	boost::thread::attributes attrs;
 	sched_param param;
-	int ret;
-	ret = pthread_attr_init(attrs.native_handle());
+	pthread_attr_init(attrs.native_handle());
 	attrs.set_stack_size(4096*32);
-	ret = pthread_attr_getschedparam(attrs.native_handle(), &param);
+	pthread_attr_getschedparam(attrs.native_handle(), &param);
 	param.sched_priority = 40;
-    ret = pthread_attr_setschedpolicy(attrs.native_handle(), SCHED_FIFO);
-	ret = pthread_attr_setschedparam (attrs.native_handle(), &param);
+    pthread_attr_setschedpolicy(attrs.native_handle(), SCHED_FIFO);
+	pthread_attr_setschedparam (attrs.native_handle(), &param);
 
  	ethercatThread = new boost::thread(attrs, boost::bind(&EtherCATMaster::ethercatHandler, this));
 // 	ethercatThread = new boost::thread(boost::bind(&EtherCATMaster::ethercatHandler, this));
+	sleep(1);
 	inOP = true;
 
 	return true;
@@ -219,7 +219,7 @@ void EtherCATMaster::printEthercatStatus() {
 }
 
 void EtherCATMaster::reconnectSlave(int slave) {
-	flagReconnectSlave = true;
+	if(slave >=0) flagReconnectSlave = true;
 }
 
 void EtherCATMaster::ethercatHandler() {
@@ -233,7 +233,6 @@ void EtherCATMaster::ethercatHandler() {
 	long int communicationErrors = 0;
 	long int maxCommunicationErrors = 1000;
 	int timeTillNextEthercatUpdate = 1000; //usec
-
 	ecx_send_processdata(&ecx_context);
 	
 	while (!stopThread) {

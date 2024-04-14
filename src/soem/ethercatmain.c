@@ -320,7 +320,7 @@ int ecx_init_redundant(ecx_contextt *context, ecx_redportt *redport, const char 
 void ecx_close(ecx_contextt *context)
 {
    ecx_closenic(context->port);
-};
+}
 
 /** Read one byte from slave EEPROM via cache.
  *  If the cache location is empty then a read request is made to the slave.
@@ -2045,7 +2045,7 @@ int ec_init_redundant(const char *ifname, char *if2name)
 void ec_close(void)
 {
    ecx_close(&ecx_context);
-};
+}
 
 /** Read one byte from slave EEPROM via cache.
  *  If the cache location is empty then a read request is made to the slave.

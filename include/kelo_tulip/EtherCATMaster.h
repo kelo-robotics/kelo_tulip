@@ -104,10 +104,7 @@ protected:
 	int expectedWKC;
 	volatile int wkc;
 	bool inOP = false;
-	
-	std::vector<EtherCATModule*> modules;
-
-	char IOmap[4096];
+	char IOmap[16384];
 	std::string device;
 	bool ethercatInitialized;
 	boost::thread* ethercatThread;
@@ -115,9 +112,10 @@ protected:
 	volatile bool stopThread;
 	volatile int threadPhase;
 	volatile int pauseThreadMs;
-
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
+
+	std::vector<EtherCATModule*> modules;
 
 private:
 	EtherCATMaster(const EtherCATMaster&);

@@ -163,7 +163,7 @@ typedef struct PACKED
       uint16_t frameinfo2;
       uint16_t result;
    };
-   uint8 data[0];
+   uint8 data[1];
 } ec_EOEt;
 PACKED_END
 
