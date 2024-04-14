@@ -121,11 +121,14 @@ target_link_libraries(platform_driver
 	pthread
 )
 
-IF(USE_SETCAP)
-	add_custom_command(TARGET platform_driver POST_BUILD
-		COMMAND ${SUDO_COMMAND} setcap cap_sys_nice,cap_net_raw+ep $<TARGET_FILE:platform_driver>
-	)
-endif(USE_SETCAP)
+# IF(USE_SETCAP)
+# 	add_custom_command(
+# 		TARGET platform_driver 
+# 		POST_BUILD
+# 		COMMAND ${CMAKE_COMMAND} -E echo "Set capabilities of platform_driver"
+# 		COMMAND ${SUDO_COMMAND} setcap cap_sys_nice,cap_net_raw+ep $<TARGET_FILE:platform_driver>
+# 	)
+# endif(USE_SETCAP)
 
 install(TARGETS
 	tulip_library
@@ -138,10 +141,39 @@ install(TARGETS
 	DESTINATION lib/${PROJECT_NAME}
 )
 
-#install(
-#  DIRECTORY include/
-#  DESTINATION include/
-#)
+IF(USE_SETCAP)
+set (t_cmd setcap)
+set (t_arg cap_sys_nice,cap_net_raw+ep)
+set (t_file ${CMAKE_INSTALL_PREFIX}/lib/${PROJECT_NAME}/platform_driver)
+set (t_ld_path /etc/ld.so.conf.d)
+set (t_ld_name ld_kelo_tulip.conf)
+install( CODE 
+    "
+message(NOTICE \"POST INSTALL\")
+execute_process(COMMAND getcap ${t_file} RESULT_VARIABLE t_res OUTPUT_VARIABLE t_cap)
+#message(NOTICE \"getcap1 => \${t_cap}\")
+if(t_cap STREQUAL \"\")
+	message(NOTICE \"sudo ${t_cmd} ${t_arg} ${t_file}\")
+	execute_process(COMMAND sudo ${t_cmd} ${t_arg} ${t_file} )
+	execute_process(COMMAND getcap ${t_file} RESULT_VARIABLE t_res OUTPUT_VARIABLE t_cap)
+	#message(NOTICE \"getcap2 => \${t_cap}\")
+else()	
+	message(NOTICE \"${t_file} already has capabilities set, no action.\")
+endif()
+if(EXISTS ${t_ld_path}/${t_ld_name})
+	message(NOTICE \"${t_ld_path}/${t_ld_name} already exists, no action.\")
+else()
+	file(WRITE ${t_ld_name} \"/opt/ros/\$ENV{ROS_DISTRO}/lib\n\${CMAKE_INSTALL_PREFIX}/lib\n\")
+	execute_process(COMMAND sudo cp ${t_ld_name} ${t_ld_path} )
+	message(NOTICE \"${t_ld_name} generated and copied to ${t_ld_path}\")
+	execute_process(COMMAND sudo ldconfig )
+	message(NOTICE \"sudo ldconfig excecuted.\")
+endif()
+    "
+)
+# TODO : find solution when sudo requires password (request is not shown)
+# To mitigate this, cache sudo credentials before colcon build (f.e. sudo ls)
+ENDIF(USE_SETCAP)
 
 install(DIRECTORY
 	config
