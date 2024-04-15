@@ -1,0 +1,6 @@
+<launch>
+
+    <include file="$(find-pkg-share kelo_tulip)/launch/example_launch.xml"/>
+    <node pkg="joy" exec="joy_node" name="joy" output="screen" />
+
+</launch>

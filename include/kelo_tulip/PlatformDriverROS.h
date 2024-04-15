@@ -90,8 +90,8 @@ public:
 protected:
 	virtual kelo::PlatformDriver* createDriver();
 	
-	void readWheelModels(const rclcpp::Node::SharedPtr nh);
-	void readWheelConfig(const rclcpp::Node::SharedPtr nh);
+	void readWheelModels();
+	void readWheelConfig();
 	void checkAndPublishSmartWheelStatus();
 	
 	void initializeEncoderValue();
@@ -158,7 +158,9 @@ protected:
 	std::vector<double> prev_right_enc;
 	double odomx;
 	double odomy;
-	double odoma;		
+	double odoma;
+	
+	rclcpp::Node::SharedPtr nh;
 };
 
 } // namespace kelp

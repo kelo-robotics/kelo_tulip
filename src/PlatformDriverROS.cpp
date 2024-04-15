@@ -82,6 +82,8 @@ PlatformDriverROS::~PlatformDriverROS() {
 }
 
 bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefix) {
+	this->nh = nh;
+	
 	nh->declare_parameter("num_wheels", 0);
 	nh->declare_parameter("current_stop", 20.0);
 	nh->declare_parameter("current_drive", 20.0);
@@ -118,8 +120,8 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	wheelData.resize(nWheels, data);
 
 	// read all wheel configs
-	readWheelModels(nh);
-	readWheelConfig(nh);
+	readWheelModels();
+	readWheelConfig();
 
 	driver = createDriver();
 
@@ -181,6 +183,9 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	odom_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(nh);
 	
 	initializeEncoderValue();
+	
+	
+	
 	return true;
 }
 
@@ -193,7 +198,7 @@ bool PlatformDriverROS::step() {
 
 	//calculate robot displacement and current pose
 	calculateRobotPose(vx, vy, va);
-			
+		
 	//publish the odometry
 	publishOdometry(vx, vy, va);
 
@@ -201,7 +206,7 @@ bool PlatformDriverROS::step() {
 	geometry_msgs::msg::TransformStamped odom_trans;
 	createOdomToBaseLinkTransform(odom_trans);
 	odom_broadcaster->sendTransform(odom_trans);
-		
+	
 /*
 		//publish smartwheel values
 		std_msgs::msg::float64_multi_array processDataValues;
@@ -215,7 +220,6 @@ bool PlatformDriverROS::step() {
 */
 
 	publishProcessDataInput();
-
 	publishBattery();
 
 	//publish IMU data
@@ -236,7 +240,7 @@ kelo::PlatformDriver* PlatformDriverROS::createDriver() {
 	return new kelo::PlatformDriver(wheelConfigs, wheelData);
 }
 
-void PlatformDriverROS::readWheelModels(const rclcpp::Node::SharedPtr nh) {
+void PlatformDriverROS::readWheelModels() {
 	nh->declare_parameter("wheel_models.list", std::vector<std::string>{});
 	rclcpp::Parameter list = nh->get_parameter("wheel_models.list");
 	std::vector<std::string> parameterList = list.as_string_array();
@@ -285,32 +289,32 @@ void PlatformDriverROS::readWheelModels(const rclcpp::Node::SharedPtr nh) {
 	//}
 }
 
-void PlatformDriverROS::readWheelConfig(const rclcpp::Node::SharedPtr nh) {
+void PlatformDriverROS::readWheelConfig() {
 	for (int i = 0; i < nWheels; i++) {
 		std::stringstream ssGroupName;
 		ssGroupName << "wheel" << i;
 		std::string groupName = ssGroupName.str();
-		nh->declare_parameter(groupName + "/ethercat_number", 0);
-		nh->declare_parameter(groupName + "/x", 0.0);
-		nh->declare_parameter(groupName + "/y", 0.0);
-		nh->declare_parameter(groupName + "/a", 0.0);
+		nh->declare_parameter(groupName + ".ethercat_number", 0);
+		nh->declare_parameter(groupName + ".x", 0.0);
+		nh->declare_parameter(groupName + ".y", 0.0);
+		nh->declare_parameter(groupName + ".a", 0.0);
 
 		kelo::WheelConfig config;
 		config.enable = true;
 		config.reverseVelocity = true;
 		rclcpp::Parameter ecatNr, wheelx, wheely, wheela;
 		bool ok =		
-		     nh->get_parameter(groupName + "/ethercat_number", ecatNr)
-		  && nh->get_parameter(groupName + "/x", wheelx)
-			&& nh->get_parameter(groupName + "/y", wheely)
-			&& nh->get_parameter(groupName + "/a", wheela);
+		     nh->get_parameter(groupName + ".ethercat_number", ecatNr)
+		  && nh->get_parameter(groupName + ".x", wheelx)
+			&& nh->get_parameter(groupName + ".y", wheely)
+			&& nh->get_parameter(groupName + ".a", wheela);
 		config.ethercatNumber = ecatNr.as_int();
 		config.x = wheelx.as_double();
 		config.y = wheely.as_double();
 		config.a = wheela.as_double();
 
 		rclcpp::Parameter reverseVelocity;
-		if (nh->get_parameter(groupName + "/reverse_velocity", reverseVelocity))
+		if (nh->get_parameter(groupName + ".reverse_velocity", reverseVelocity))
 			config.reverseVelocity = (reverseVelocity.as_int() != 0);
 
 		if (!ok)
@@ -318,7 +322,7 @@ void PlatformDriverROS::readWheelConfig(const rclcpp::Node::SharedPtr nh) {
 
 		// copy complete model data if provided
 		rclcpp::Parameter model;
-		if (nh->get_parameter(groupName + "/model", model)) {
+		if (nh->get_parameter(groupName + ".model", model)) {
 			if (wheelModels.count(model.as_string()) > 0) {
 				config.model = wheelModels[model.as_string()];
 			} else {
@@ -328,9 +332,9 @@ void PlatformDriverROS::readWheelConfig(const rclcpp::Node::SharedPtr nh) {
 
 		// enable separate values for this wheel
 		rclcpp::Parameter x;
-		if (nh->get_parameter(groupName + "/wheel_distance", x))
+		if (nh->get_parameter(groupName + ".wheel_distance", x))
 			config.model.wheeldistance = x.as_double();
-		if (nh->get_parameter(groupName + "/diameter", x))
+		if (nh->get_parameter(groupName + ".diameter", x))
 			config.model.diameter = x.as_double();
 
 		wheelConfigs[i] = config;
@@ -460,9 +464,8 @@ void PlatformDriverROS::calculateRobotPose(double vx, double vy, double va) {
 void PlatformDriverROS::publishOdometry(double vx, double vy, double va) {
 	tf2::Quaternion odom_quat;
 	odom_quat.setRPY(0, 0, odoma);
-	
 	nav_msgs::msg::Odometry odom;
-	odom.header.stamp = nh->now();
+	odom.header.stamp = nh->get_clock()->now();
 	//odom.header.seq = sequence_id++;
 	odom.header.frame_id = "odom";
 	odom.child_frame_id = "base_link";
@@ -493,8 +496,7 @@ void PlatformDriverROS::publishOdometry(double vx, double vy, double va) {
 void PlatformDriverROS::createOdomToBaseLinkTransform(geometry_msgs::msg::TransformStamped& odom_trans) {
 	tf2::Quaternion odom_quat;
 	odom_quat.setRPY(0, 0, odoma);
-	
-	odom_trans.header.stamp = nh->now();
+	odom_trans.header.stamp = nh->get_clock()->now();
 	odom_trans.header.frame_id = "odom";
 	odom_trans.child_frame_id = "base_link";
 	odom_trans.transform.translation.x = odomx;

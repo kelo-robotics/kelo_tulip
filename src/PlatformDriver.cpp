@@ -222,7 +222,6 @@ bool PlatformDriver::step() {
 	if (nWheels > 0)
 		current_ts = processData[0].sensor_ts; // TODO: atleast use firstWheel
 	
-
 	updateStatusError();
 	updateEncoders();
 	updateShock();
