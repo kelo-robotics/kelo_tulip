@@ -153,6 +153,7 @@ protected:
 	double joyVlinMax;
 	double joyVaMax;
 	double joyScale;
+	std::vector<float> prev_axes;
 
 	std::vector<double> prev_left_enc;
 	std::vector<double> prev_right_enc;

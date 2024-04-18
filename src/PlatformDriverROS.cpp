@@ -66,6 +66,7 @@ PlatformDriverROS::PlatformDriverROS()
 	joyVlinMax = 1.0;
 	joyVaMax = 1.0;
 	joyScale = 1.0;
+	prev_axes.resize(6, 0.0);
 
 	odomx = 0;
 	odomy = 0;
@@ -609,12 +610,12 @@ void PlatformDriverROS::joyCallbackImpl(const sensor_msgs::msg::Joy::SharedPtr j
 	if (joy->buttons[5]) {
 		useJoy = true;
 
-		if (joy->axes[5] > 0.5 && joyScale < 1.0) {
+		if (prev_axes[5] <= 0 && joy->axes[5] > 0.5 && joyScale < 1.0) {
 			joyScale = joyScale * 2.0;
 			if (joyScale > 1.0)
 				joyScale = 1.0;
 			std::cout << "New joypad maxvel = " << joyScale * joyVlinMax << " m/s" << std::endl;
-		} else if (joy->axes[5] < -0.5 && joyScale > 0.001) {
+		} else if (prev_axes[5] >= 0 && joy->axes[5] < -0.5 && joyScale > 0.001) {
 			joyScale = joyScale / 2.0;
 			std::cout << "New joypad maxvel = " << joyScale * joyVlinMax << " m/s" << std::endl;
 		}
@@ -631,6 +632,12 @@ void PlatformDriverROS::joyCallbackImpl(const sensor_msgs::msg::Joy::SharedPtr j
 		
 		if (activeByJoypad)
 			driver->setCanChangeActive();
+	}
+
+	if (prev_axes.size() == joy->axes.size()) {
+		prev_axes = joy->axes;
+	} else {
+		std::cout << "Joypad axes dimension does not match. Please check the joypad configuration!" << std::endl;
 	}
 }
 
