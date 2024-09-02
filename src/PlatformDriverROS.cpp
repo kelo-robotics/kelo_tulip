@@ -175,8 +175,8 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	batteryPublisher = nh->create_publisher<std_msgs::msg::Float32>("battery", 10);
 	errorPublisher = nh->create_publisher<std_msgs::msg::Int32>("error", 10);
 	statusPublisher = nh->create_publisher<std_msgs::msg::Int32>("status", 10);
-	joySubscriber = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 1000, std::bind(&PlatformDriverROS::joyCallback, this, std::placeholders::_1));
-	cmdVelSubscriber = nh->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 1000, std::bind(&PlatformDriverROS::cmdVelCallback, this, std::placeholders::_1));
+	joySubscriber = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, std::bind(&PlatformDriverROS::joyCallback, this, std::placeholders::_1));
+	cmdVelSubscriber = nh->create_subscription<geometry_msgs::msg::Twist>("/cmd_vel", 5, std::bind(&PlatformDriverROS::cmdVelCallback, this, std::placeholders::_1));
 	resetSubscriber = nh->create_subscription<std_msgs::msg::Empty>("reset", 1, std::bind(&PlatformDriverROS::resetCallback, this, std::placeholders::_1));
 	enableSubscriber = nh->create_subscription<std_msgs::msg::Int32MultiArray>("wheels_enable", 10, std::bind(&PlatformDriverROS::enableCallback, this, std::placeholders::_1));
 	
@@ -629,7 +629,6 @@ void PlatformDriverROS::joyCallbackImpl(const sensor_msgs::msg::Joy::SharedPtr j
 
 	if (useJoy) {
 		driver->setTargetVelocity(joy->axes[1] * joyVlinMax * joyScale, joy->axes[0] * joyVlinMax * joyScale, joy->axes[2] * joyVaMax * joyScale);
-		
 		if (activeByJoypad)
 			driver->setCanChangeActive();
 	}
