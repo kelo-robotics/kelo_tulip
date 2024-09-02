@@ -1,6 +1,9 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.5.1)
 project(kelo_tulip)
 
+if(POLICY CMP0148) 
+	cmake_policy(SET CMP0148 OLD) 
+endif()
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -105,15 +108,18 @@ ament_target_dependencies(tulip_library
 	Boost
 )
 
-rosidl_target_interfaces(tulip_library ${PROJECT_NAME} "rosidl_typesupport_cpp")
-#rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-#target_link_libraries(tulip_library "${cpp_typesupport_target}")
+if ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
+	rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+	target_link_libraries(tulip_library "${cpp_typesupport_target}")
+else ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
+	rosidl_target_interfaces(tulip_library ${PROJECT_NAME} "rosidl_typesupport_cpp")
+endif ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
 
 add_executable(platform_driver
 	src/TulipMain.cpp
 )
 
-target_link_libraries(platform_driver
+target_link_libraries(platform_driver   
 	${Boost_LIBRARIES}
 	tulip_library
 	tulip_velocity_controller
@@ -175,6 +181,11 @@ endif()
 # To mitigate this, cache sudo credentials before colcon build (f.e. sudo ls)
 ENDIF(USE_SETCAP)
 
+install(DIRECTORY 
+	include/
+	DESTINATION include
+)
+
 install(DIRECTORY
 	config
 	launch
@@ -191,8 +202,9 @@ install(
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(rosidl_default_runtime)
-ament_export_dependencies(Boost COMPONENTS thread)
 ament_export_include_directories(${INCLUDE_DIRS})
+ament_export_dependencies(Boost)
+ament_export_dependencies(std_msgs)
 ament_export_libraries(tulip_library tulip_velocity_controller soem)
 
 ament_package()
