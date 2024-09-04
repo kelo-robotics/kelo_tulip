@@ -11,67 +11,15 @@ You can move your mobile platform via a joypad for test purposes or use any soft
 
 ## System requirements
 
-This software was tested on Ubuntu 16 with ROS Kinetic, Ubuntu 18 with ROS Melodic and Ubuntu 20 with ROS Noetic. Other Linux flavors should work as well.
+This software was tested on Ubuntu 20 with ROS Foxy and Ubuntu 22 with ROS Humble.
 
-For ROS it is enough to install the base system (for Noetic ros-noetic-ros-base). In addition it requires
+For ROS it is enough to install the base system (for Humble ros-humble-ros-base).
 
-```
-sudo apt install ros-noetic-tf
-```
-
-If another ROS version is used, replace the term noetic accordingly in these commands.
 
 ## Installation
 
-The package can be compiled like any ROS package. Clone or copy it into a ROS workspace source folder and run `catkin_make` or `catkin build`, depending on your preferences.
+The package can be compiled like any ROS package. Clone or copy it into a ROS workspace source folder and run `colcon build` at the ROS workspace root directory.
 
-
-### Permissions
-
-Special permissions need to be granted to the generated executable, since it needs *RAW* access to the Ethernet port. Instead of starting it as root the `setcap` tool can be used:
- 
-```
-sudo setcap cap_net_raw+ep <name_of_executable>
-```
-
-Optionally, the command can be applied during the build process by passing the `-DUSE_SETCAP=ON` option to catkin. Default is `OFF`.
-
-```
-catkin_make -DUSE_SETCAP=ON
-```
-OR
-```
-catkin build kelo_tulip -DUSE_SETCAP=ON
-```
-
-**Note**: If you use this flag, you will be asked to input the sudo password during the build process. It might look like the build is going on but you need to lookout for `[sudo] password for <username>` in the output and enter the password after this prompt had appeared. If not, the build process will continue forever.
-
-### Finding dynamic libraries
-
-If using Ubuntu 18 or newer (with ROS Melodic or Noetic), running the setcap command as described above can cause the executable to not find all dynamic libraries anymore. This is because the dynamic linker works in a "secure-execution mode" when the capabilities of a program changed, in which it ignores most environment variables such as LD_LIBRARY_PATH. A typical error after starting reads like this:
-
-```
-devel/lib/kelo_tulip/platform_driver: error while loading shared libraries: libtf2_ros.so: cannot open shared object file: No such file or directory
-```
-
-
-In that case it is recommended to set the path to those libraries on system level. The following method should work on default installations, but please adapt accordingly if you already made other changes in your system.
-
-For ROS Noetic, the following command will add an entry to point to the dynamic libraries of ROS:
-
-```
-sudo sh -c 'echo "/opt/ros/noetic/lib/" > /etc/ld.so.conf.d/ros.conf'
-```
-
-If not using ROS Noetic, the path there should be changed accordingly.
-
-Afterwards you need to run
-
-```
-sudo ldconfig
-```
-
-to make the changes take effect.
 
 ## Usage
 ### Starting the program
@@ -79,12 +27,18 @@ to make the changes take effect.
 The program can be started by running
 
 ```
-roslaunch kelo_tulip example.launch
+ros2 launch kelo_tulip example.launch.py
+```
+
+or
+
+```
+ros2 launch kelo_tulip example_joypad.launch.py
 ```
 
 ### Parameters
 
-The default launch file in `kelo_tulip/launch/example.launch` loads the YAML configuration from `config/example.yaml`. Feel free to change parameters directly in this config file, or to make a copy and adjust the launch file to load the new file.
+The default launch file in `kelo_tulip/launch/example.launch.py` loads the YAML configuration from `config/example.yaml`. Feel free to change parameters directly in this config file, or to make a copy and adjust the launch file to load the new file.
 
 #### Network interface
 
@@ -95,6 +49,23 @@ device: enp2s0
 ```
 
 This setting must be adjusted to the network interface by which the KELO drives are connected via EtherCAT.
+
+#### Modules
+
+The following setting defines and configures the modules launched by kelo_tulip. The main module of the package is the `platform_driver`, but the package can also be extended for other devices such as grippers, power management unit, etc.
+Another module included in the package is `robile_master_battery`. This module manages the communication between the main cpu with a robile master battery.
+
+```
+platform_driver:
+  ros__parameters:
+    modules:
+      list: ["platform_driver"]
+      platform_driver:
+        type: platform_driver
+        controller: velocity_platform_controller
+```
+
+A new module can be added to kelo_tulip by adding the module name to the list of modules in TulipMain.cpp.
 
 #### Wheels
 
@@ -117,14 +88,35 @@ Please adjust the list of wheels with the correct number and location of the whe
 
 The values `x` and `y` are the coordinates of the wheels center according to the fixed frame of the platform in meters. `a` is the offset of pivot encoder in rad. 
 
+#### Controller Limits
+
+The velocity and acceleration limits of the controller can be set by using these parameters:
+
+```
+vlin_max: 1.2
+va_max: 1.1
+vlin_acc_max: 0.4 
+vlin_dec_max: 1.0
+va_acc_max: 0.5
+va_dec_max: 1.0
+```
+
+The explanation of the parameters are as follows: 
+
+- `vlin_max`: maximum linear velocity in m/s
+- `va_max`: maximum angular velocity in rad/s
+- `vlin_acc_max`: maximum linear acceleration in m/s^2
+- `vlin_dec_max`: maximum linear deceleration in m/s^2
+- `va_acc_max`: maximum angular acceleration in rad/s^2
+- `va_dec_max`: minimum angular acceleration in rad/s^2
+
 ### ROS Interfaces
 
 Currently the kelo_tulip software uses ROS as a middleware, subscribing resp. publishing to the following topics.
 
 #### /cmd_vel
 
-This topic accepts [`geometry_msgs/Twist`](http://docs.ros.org/en/melodic/api/geometry_msgs/html/msg/Twist.html) messages. Any motion software that creates a velocity vector for the platform and publishes `geometry_msgs/Twist` messages to the `cmd_vel` topic can be used. The ROS package [`move_base`](http://wiki.ros.org/move_base) is an example that conforms to that. 
-
+This topic accepts [`geometry_msgs/Twist`](https://docs.ros2.org/foxy/api/geometry_msgs/msg/Twist.html) messages. Any motion software that creates a velocity vector for the platform and publishes `geometry_msgs/Twist` messages to the `cmd_vel` topic can be used. The ROS package [`Nav2`](https://github.com/ros-navigation/navigation2) is an example that conforms to that.
 
 #### /joy
 
@@ -134,13 +126,13 @@ Note: For safety reasons joystick messages are only considered if the `RB` butto
 
 #### /odom and /tf
 
-On the topic `/odom` odometry data in form of [`nav_msgs/Odometry`](http://docs.ros.org/en/noetic/api/nav_msgs/html/msg/Odometry.html) are published. Each time the program is started, the position is reset to the origin.
+On the topic `/odom` odometry data in form of [`nav_msgs/Odometry`](https://docs.ros2.org/foxy/api/nav_msgs/msg/Odometry.html) are published. Each time the program is started, the position is reset to the origin.
 
 The same odometry data is published also on the topic `/tf` in the form of tf transform from the frame `base_link` to `odom`.
 
 #### /status
 
-On this topic an integer representing status information about the controller is published periodically in form of [`std_msgs::Int32`](https://docs.ros.org/en/api/std_msgs/html/msg/Int32.html) messages. The single bits of the number have the following meaning:
+On this topic an integer representing status information about the controller is published periodically in form of [`std_msgs::Int32`](https://docs.ros2.org/foxy/api/std_msgs/msg/Int32.html) messages. The single bits of the number have the following meaning:
 
 | Bit       | Description                                                                                                                             |
 |-----------------------|-------------------------------------------------------------------------------------------------------------------------------------|
