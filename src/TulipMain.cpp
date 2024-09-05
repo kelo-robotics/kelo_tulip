@@ -109,28 +109,6 @@ int main (int argc, char** argv)
 		rosModules.push_back(module);
 	}
 
-	//XmlRpc::XmlRpcValue modulesXML;
-	//std::string configModulesTag = "modules";
-	//nh.getParam(configModulesTag, modulesXML);
-	//if (modulesXML.getType() == XmlRpc::XmlRpcValue::TypeStruct)	{
-		//for (XmlRpc::XmlRpcValue::const_iterator it = modulesXML.begin(); it != modulesXML.end(); ++it) {
-			//if (it->second.getType() != XmlRpc::XmlRpcValue::TypeStruct)	{
-				//std::cout << "Error: configuration for module " << it->first << " cannot be read." << std::endl;
-				//return -1;
-			//}
-
-			//std::string moduleName = it->first;
-			//std::string moduleType = it->second["type"];
-			//std::string configTag = configModulesTag + "/" + moduleName + "/";
-			//kelo::EtherCATModuleROS* module = createModule(nh, moduleType, moduleName, configTag);
-			
-			//if (!module)
-				//return -1;
-				
-			//rosModules.push_back(module);
-		//}
-	//}
-
 	// legacy config mode for master battery
 	int robileMasterBatteryEthercatNumber = nh->get_parameter("robile_master_battery_ethercat_number").as_int();
 	if (robileMasterBatteryEthercatNumber > 0) {	
