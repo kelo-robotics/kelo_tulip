@@ -11,15 +11,22 @@ You can move your mobile platform via a joypad for test purposes or use any soft
 
 ## System requirements
 
-This software was tested on Ubuntu 20 with ROS Foxy and Ubuntu 22 with ROS Humble.
+This software was tested on Ubuntu 20.04 with ROS Foxy and Ubuntu 22.04 with ROS Humble.
+For ROS1 version please read the documentation on the master branch.
 
-For ROS it is enough to install the base system (for Humble ros-humble-ros-base).
+For the ROS version it is enough to install the base system (for Humble ros-humble-ros-base).
 
 
 ## Installation
 
 The package can be compiled like any ROS package. Clone or copy it into a ROS workspace source folder and run `colcon build` at the ROS workspace root directory.
 
+~~~ sh
+cd <WORKSPACE_DIR>/src
+git clone -b ros2-develop https://github.com/kelo-robotics/kelo_tulip.git
+cd ..
+colcon build
+~~~
 
 ## Usage
 ### Starting the program
