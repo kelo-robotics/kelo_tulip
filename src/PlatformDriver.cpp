@@ -103,12 +103,6 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	wheel_sensor_ts.resize(nWheels, 0);
 	processData.resize(nWheels);
 	lastProcessData.resize(nWheels);
-	shockList.resize(nWheels);
-	for(int i = 0 ; i < nWheels; i++)
-	{
-		shockList[i].writeSet = -1;
-		shockList[i].readSet = -1;
-	}
 
 	velocityPlatformController.initialise(wheelConfigs);
 }
@@ -146,72 +140,6 @@ bool PlatformDriver::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) {
 	return true;
 }
 
-#define SHOCKBINVALUE 5.0f
-
-int PlatformDriver::float2bin(float accel) {
-	// calculate bin for accelleration obeservation
-	int bin = (fabsf(accel) / SHOCKBINVALUE);
-	// clip at maximum bin position
-	if(bin >= SHOCKBINSIZE) bin = SHOCKBINSIZE - 1;
-	return bin;
-}
-
-#define NSPERSEC 1000000000
-
-void PlatformDriver::updateShock() {
-	for (int i = 0; i < nWheels; i++) {
-		uint64_t currentImu_ts = processData[i].imu_ts;
-		struct shockSet *shockp = &shockList[i];
-		int writeSet = shockp->writeSet;
-		bool writeClear = false;
-		// set-up first set for write direction
-		if(writeSet < 0) {
-			if(shockp->readSet == 0) writeSet = 1;
-			else writeSet = 0;
-			shockp->writeSet = writeSet;
-			writeClear = true;
-		}
-		// swap write set after 1 second of obeservations
-		else if(currentImu_ts >= (shockp->set[writeSet].first_ts + NSPERSEC)) {
-			if(shockp->readSet < 0) {
-				shockp->readSet = writeSet;
-				if(++writeSet > 1) writeSet = 0;
-				shockp->writeSet = writeSet;
-			}
-			writeClear = true;
-		}
-		struct shockData* sDatap = &(shockp->set[writeSet]);
-		// Clear write set for use
-		if(writeClear) {
-			sDatap->first_ts = currentImu_ts;
-			sDatap->last_ts = 0;
-			sDatap->maxX = 0;
-			sDatap->maxY = 0;
-			sDatap->maxZ = 0;
-			for(int j = 0 ; j < SHOCKBINSIZE; j++)
-			{
-				sDatap->binX[j] = 0;
-				sDatap->binY[j] = 0;
-				sDatap->binZ[j] = 0;
-			}
-			writeClear = false;
-		}
-		// Update write set 
-		if(currentImu_ts > sDatap->last_ts) {
-			sDatap->last_ts = currentImu_ts;
-			int binX = float2bin(processData[i].accel_x);
-			if(binX > (int)sDatap->maxX) sDatap->maxX = binX;
-			sDatap->binX[binX]++;
-			int binY = float2bin(processData[i].accel_y);
-			if(binY> (int)sDatap->maxY) sDatap->maxY = binY;
-			sDatap->binY[binY]++;
-			int binZ = float2bin(processData[i].accel_z);
-			if(binZ > (int)sDatap->maxZ) sDatap->maxZ = binZ;
-			sDatap->binZ[binZ]++;
-		}
-	}
-}
-
 bool PlatformDriver::step() {
 	stepCount++;
 	lastProcessData = processData;
@@ -224,7 +152,6 @@ bool PlatformDriver::step() {
 	
 	updateStatusError();
 	updateEncoders();
-	updateShock();
 
 	switch (state) {
 		case DRIVER_STATE_INIT:   return stepInit();
@@ -357,17 +284,6 @@ txpdo1_t* PlatformDriver::getWheelProcessData(unsigned int wheel) {
 	// TODO: thread synchronization
 	int slave = wheelConfigs[wheel].ethercatNumber;
 	return (txpdo1_t*) ecx_slaves[slave].inputs;
-}
-
-struct shockData* PlatformDriver::getShockData(unsigned int wheel) {
-	int readSet = shockList[wheel].readSet;
-	if(readSet >= 0)
-		return &(shockList[wheel].set[readSet]);
-	else return NULL;	
-}
-
-void PlatformDriver::clearShockData(unsigned int wheel) {
-	shockList[wheel].readSet = -1;
 }
 
 void PlatformDriver::setWheelProcessData(unsigned int wheel, rxpdo1_t* data) {

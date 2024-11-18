@@ -170,7 +170,6 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	odomInitializedPublisher = nh->create_publisher<std_msgs::msg::Empty>("/odom_initialized", 10);
 //	timestampPublisher = nh->create_publisher<std_msgs::msg::UInt64MultiArray>("timestamp", 10);
 	imuPublisher = nh->create_publisher<sensor_msgs::msg::Imu>("~/imu", 10);
-	shockPublisher = nh->create_publisher<kelo_tulip::msg::ShockBin>("~/shock", 10);
 	processDataInputPublisher = nh->create_publisher<kelo_tulip::msg::KeloDrivesInput>("~/wheels_input", 10);
 	batteryPublisher = nh->create_publisher<std_msgs::msg::Float32>("~/battery", 10);
 	errorPublisher = nh->create_publisher<std_msgs::msg::Int32>("~/error", 10);
@@ -581,24 +580,6 @@ void PlatformDriverROS::publishIMU() {
 		// imu.linear_acceleration.y = swData->accel_y;
 		// imu.linear_acceleration.z = swData->accel_z;
 		// imuPublisher.publish(imu);
-		struct shockData* shockp = driver->getShockData(i);
-		if(shockp) {
-			kelo_tulip::msg::ShockBin shockmsg;
-			shockmsg.wheel = i;
-			shockmsg.first_ts = shockp->first_ts;
-			shockmsg.last_ts = shockp->last_ts;
-			for(int n = 0 ; n < SHOCKBINSIZE; n++)
-			{
-				shockmsg.bin_x.push_back(shockp->binX[n]);
-				shockmsg.bin_y.push_back(shockp->binY[n]);
-				shockmsg.bin_y.push_back(shockp->binZ[n]);
-			}
-			shockmsg.max_x = shockp->maxX;	
-			shockmsg.max_y = shockp->maxY;	
-			shockmsg.max_z = shockp->maxZ;
-			driver->clearShockData(i);
-			shockPublisher->publish(shockmsg);
-		}
 	}
 }
 

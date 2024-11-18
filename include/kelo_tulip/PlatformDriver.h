@@ -92,21 +92,6 @@ enum DriverError {
 	DRIVER_ERROR_SLIP = 0x2000
 };
 
-#define SHOCKBINSIZE	12
-
-struct shockData {
-	uint64_t	first_ts, last_ts;
-	uint32_t	binX[SHOCKBINSIZE];
-	uint32_t	binY[SHOCKBINSIZE];
-	uint32_t	binZ[SHOCKBINSIZE];
-	uint32_t	maxX, maxY, maxZ;
-};
-
-struct shockSet {
-	struct shockData		set[2];
-	volatile int			writeSet, readSet;
-};
-
 class PlatformDriver : public EtherCATModule {
 public:
 	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
@@ -163,8 +148,6 @@ public:
 	std::vector<double> getEncoderValue(int idx);
 
 	void SetState(int wheel, uint16_t state);
-	struct shockData* getShockData(unsigned int wheel);
-	void clearShockData(unsigned int wheel);
 		
 protected:
 	int checkSmartwheelTimestamp();
@@ -176,9 +159,6 @@ protected:
 	bool hasWheelStatusEnabled(unsigned int wheel);
 	bool hasWheelStatusError(unsigned int wheel);
 	virtual void updateStatusError();
-
-	void updateShock();
-	int float2bin(float accel);
 
 	volatile DriverState state;
 	std::ofstream logfile;
@@ -209,7 +189,6 @@ protected:
 	int firstWheel, nWheels;
 	std::vector<WheelConfig> wheelConfigs;
 	std::vector<WheelData> wheelData;
-	std::vector<struct shockSet> shockList;
 	
 	double maxCalibrationTime;
 	double vCalibration;

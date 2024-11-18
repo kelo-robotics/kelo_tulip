@@ -47,7 +47,6 @@ endif(WIN32)
 set(msg_files
 	"msg/KeloDriveInput.msg"
 	"msg/KeloDrivesInput.msg"
-	"msg/ShockBin.msg"
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
