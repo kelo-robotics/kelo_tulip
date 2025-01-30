@@ -119,6 +119,7 @@ namespace kelo
         float   max_pivot_error;            // maximum pivot error of smart wheel used for error correction
         float   pivot_kp;                   // proportional gain for pivot position controller
         float   wheel_diameter;             // wheel diameter
+        bool reverse_velocity;              // wheel rotation direction
 
         friend std::ostream& operator << (std::ostream &out, const WheelParamVelocity& wp)
         {

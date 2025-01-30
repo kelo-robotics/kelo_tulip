@@ -112,7 +112,8 @@ namespace kelo
             wheel_param.pivot_position.x = wheel_configs[i].x;
             wheel_param.pivot_position.y = wheel_configs[i].y;
             wheel_param.pivot_offset = wheel_configs[i].a;
-
+            wheel_param.reverse_velocity = wheel_configs[i].reverseVelocity;
+            
             wheel_params_.push_back(wheel_param);
         }
     }
@@ -280,14 +281,22 @@ namespace kelo
         /* target velocity of left wheel (dot product with unit pivot vector) */
         float vel_l = target_vel_vec_l.x * unit_pivot_vector.x
                       + target_vel_vec_l.y * unit_pivot_vector.y;
-        float target_vel_l = Utils::clip(vel_l - delta_vel,
+        if (wheel_param.reverse_velocity)
+        {
+            vel_l *= -1;
+        }
+        float target_vel_l = Utils::clip(vel_l + delta_vel,
                                                   wheel_param.max_linear_velocity,
                                                   -wheel_param.max_linear_velocity);
 
         /* target velocity of right wheel (dot product with unit pivot vector) */
         float vel_r = target_vel_vec_r.x * unit_pivot_vector.x
                       + target_vel_vec_r.y * unit_pivot_vector.y;
-        float target_vel_r = Utils::clip(vel_r + delta_vel,
+        if (wheel_param.reverse_velocity)
+        {
+            vel_r *= -1;
+        }
+        float target_vel_r = Utils::clip(vel_r - delta_vel,
                                                   wheel_param.max_linear_velocity,
                                                   -wheel_param.max_linear_velocity);
 

@@ -508,7 +508,7 @@ void PlatformDriver::doControl() {
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
 
-	// update desired velocity of platform, based on target velocity and veloity ramps
+	// update desired velocity of platform, based on target velocity and velocity ramps
 	velocityPlatformController.calculatePlatformRampedVelocities();
 	
 	for (int i = 0; i < nWheels; i++) {
@@ -524,7 +524,7 @@ void PlatformDriver::doControl() {
 		/* calculate wheel target velocity */
 		velocityPlatformController.calculateWheelTargetVelocity(i, wheel_data->encoder_pivot,
                                                                 setpoint2, setpoint1);
-		setpoint1 *= -1; // because of inverted frame
+		setpoint2 *= -1; // because of inverted frame
 
 		/* avoid sending close to zero values */
 		if ( fabs(setpoint1) < wheelsetpointmin )
