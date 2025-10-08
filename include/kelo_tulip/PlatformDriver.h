@@ -181,7 +181,9 @@ protected:
 	double curr_setpoint1, curr_setpoint2;
 	std::vector<std::vector<double> > prev_encoder;
 	std::vector<std::vector<double> > sum_encoder;
+	std::vector<std::vector<double> > abs_sum_encoder;
 	bool encoderInitialized;
+	double encCalibrationTolerance;
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
 	std::vector<bool> wheelEnabled;
