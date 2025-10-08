@@ -97,7 +97,9 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	flagReconnectSlave = false;
 
 	encoderInitialized = false;
+	encCalibrationTolerance = 20.0;
 	sum_encoder.resize(nWheels, std::vector<double> (2, 0));
+	abs_sum_encoder.resize(nWheels, std::vector<double> (2, 0));
 	prev_encoder.resize(nWheels, std::vector<double> (2, 0));
 	wheel_setpoint_ts.resize(nWheels, 0);
 	wheel_sensor_ts.resize(nWheels, 0);
@@ -352,7 +354,9 @@ bool PlatformDriver::hasWheelStatusError(unsigned int wheel) {
 	int status1 = processData[wheel].status1;
 	int status2 = processData[wheel].status2;
 
-	return (status1 != STATUS1a && status1 != STATUS1b && status1 != STATUS1disabled) || (status2 != STATUS2);
+	//return (status1 != STATUS1a && status1 != STATUS1b && status1 != STATUS1disabled) || (status2 != STATUS2);
+	return (status1 != STATUS1a && status1 != STATUS1b && status1 != STATUS1disabled) || 
+	       (status2 != STATUS2 && abs_sum_encoder[wheel][0] > encCalibrationTolerance && abs_sum_encoder[wheel][1] > encCalibrationTolerance);
 }
 
 void PlatformDriver::updateStatusError() {
@@ -487,21 +491,30 @@ void PlatformDriver::updateEncoders() {
 		double curr_encoder1 = wData->encoder_1;
 		double curr_encoder2 = wData->encoder_2;
 		if (fabs(curr_encoder1 - prev_encoder[i][0]) > M_PI) {
-			if (curr_encoder1 < prev_encoder[i][0])
+			if (curr_encoder1 < prev_encoder[i][0]) {
 				sum_encoder[i][0] += curr_encoder1 - prev_encoder[i][0] + 2 * M_PI;
-			else
+				abs_sum_encoder[i][0] += fabs(curr_encoder1 - prev_encoder[i][0] + 2 * M_PI);
+			} else {
 				sum_encoder[i][0] += curr_encoder1 - prev_encoder[i][0] - 2 * M_PI;
-		} else
+				abs_sum_encoder[i][0] += fabs(curr_encoder1 - prev_encoder[i][0] - 2 * M_PI);
+			}
+		} else {
 			sum_encoder[i][0] += curr_encoder1 - prev_encoder[i][0];
+			abs_sum_encoder[i][0] += fabs(curr_encoder1 - prev_encoder[i][0]);
+		}
 			
 		if (fabs(curr_encoder2 - prev_encoder[i][1]) > M_PI) {
-			if (curr_encoder2 < prev_encoder[i][1])
+			if (curr_encoder2 < prev_encoder[i][1]) {
 				sum_encoder[i][1] += curr_encoder2 - prev_encoder[i][1] + 2 * M_PI;
-			else
+				abs_sum_encoder[i][1] += fabs(curr_encoder2 - prev_encoder[i][1] + 2 * M_PI);
+			} else {
 				sum_encoder[i][1] += curr_encoder2 - prev_encoder[i][1] - 2 * M_PI;
-		} else
-			sum_encoder[i][1] += curr_encoder2 - prev_encoder[i][1];	
-		
+				abs_sum_encoder[i][1] += fabs(curr_encoder2 - prev_encoder[i][1] - 2 * M_PI);
+			}
+		} else {
+			sum_encoder[i][1] += curr_encoder2 - prev_encoder[i][1];
+			abs_sum_encoder[i][1] += fabs(curr_encoder2 - prev_encoder[i][1]);
+		}
 		prev_encoder[i][0] = curr_encoder1;
 		prev_encoder[i][1] = curr_encoder2;
 	}
