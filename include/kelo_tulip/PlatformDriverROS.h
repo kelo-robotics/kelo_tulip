@@ -96,6 +96,8 @@ protected:
 	void initializeEncoderValue();
 	void calculateRobotVelocity(double& vx, double& vy, double& va, double& encDisplacement);
 	void calculateRobotPose(double vx, double vy, double va);
+	void calculateRobotVelocity2(double& vx, double& vy, double& va, double& encDisplacement, double &dt);
+	void calculateRobotPose2(double vx, double vy, double va, double dt);
 	void publishOdometry(double vx, double vy, double va);
 	void createOdomToBaseLinkTransform(geometry_msgs::msg::TransformStamped& odom_trans);
 
@@ -155,6 +157,9 @@ protected:
 
 	std::vector<double> prev_left_enc;
 	std::vector<double> prev_right_enc;
+	std::vector<double> prev_pivot_enc;
+	std::vector<uint64_t> prev_ts;
+
 	double odomx;
 	double odomy;
 	double odoma;
@@ -162,6 +167,6 @@ protected:
 	rclcpp::Node::SharedPtr nh;
 };
 
-} // namespace kelp
+} // namespace kelo
 
 #endif // KELOTULIP_PLATFORMDRIVERROS_H
