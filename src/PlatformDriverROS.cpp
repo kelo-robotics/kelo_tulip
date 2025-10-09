@@ -180,12 +180,14 @@ bool PlatformDriverROS::step() {
 	checkAndPublishSmartWheelStatus();
 
 	//calculate robot velocity
-	double vx, vy, va, encDisplacement;
-	calculateRobotVelocity(vx, vy, va, encDisplacement);
+	double vx, vy, va, encDisplacement, dt;
+	//calculateRobotVelocity(vx, vy, va, encDisplacement);
+	calculateRobotVelocity2(vx, vy, va, encDisplacement, dt);
 
 	//calculate robot displacement and current pose
-	calculateRobotPose(vx, vy, va);
-			
+	//calculateRobotPose(vx, vy, va);
+	calculateRobotPose2(vx, vy, va, dt);
+
 	//publish the odometry
 	publishOdometry(vx, vy, va);
 
@@ -332,6 +334,9 @@ double norm(double x) {
 void PlatformDriverROS::initializeEncoderValue() {
 	prev_left_enc.resize(nWheels, 0);
 	prev_right_enc.resize(nWheels, 0);
+	prev_pivot_enc.resize(nWheels, 0);
+	prev_ts.resize(nWheels, 0);
+
 	for (int i=0; i<nWheels; i++) {
 		std::vector<double> encoderValueInit = driver->getEncoderValue(i);
 		prev_left_enc[i] = encoderValueInit[0];
@@ -409,6 +414,124 @@ void PlatformDriverROS::calculateRobotPose(double vx, double vy, double va) {
 	odomx += dx * cos(odoma) - dy * sin(odoma);
 	odomy += dx * sin(odoma) + dy * cos(odoma);
 	odoma = norm(odoma + va * dt);
+}
+
+void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& va, double& encDisplacement, double &dt) {
+	dt = 0.05; // Target delta time. Replaced by real delta from sensor timestamps, when available.
+	std::vector<double> rx;
+	rx.resize(nWheels, 0);
+	std::vector<double> ry;
+	ry.resize(nWheels, 0);
+	
+	//initialize the variables
+	vx = 0;
+	vy = 0;
+	va = 0;
+	encDisplacement = 0;
+	
+	for (int i = 0; i < nWheels; i++) {
+		volatile txpdo1_t* swData = driver->getWheelProcessData(i);
+		uint64_t sensor_ts;
+		float encoder_1, encoder_2, encoder_pivot, velocity_1, velocity_2, velocity_pivot;
+		int repcnt = 3;
+		// read mutiple times if data has changed while reading
+		do
+		{
+			sensor_ts = swData->sensor_ts;
+			encoder_1 = swData->encoder_1;
+			encoder_2 = swData->encoder_2;
+			encoder_pivot = swData->encoder_pivot;
+			velocity_1 = swData->velocity_1;
+			velocity_2 = swData->velocity_2;
+			velocity_pivot = swData->velocity_pivot;
+		} while ((sensor_ts != swData->sensor_ts) && --repcnt);
+		double delta_ts = (sensor_ts - prev_ts[i]) * 0.000000001;
+		prev_ts[i] = sensor_ts;
+
+		double wl, wr, wp;
+		if((delta_ts <= 0.0) || (delta_ts > 0.1))
+		{
+			// delta time too large, or zero, to calculate velocities from encoder position, use drive velocities
+			wl = velocity_1;
+			wr = -velocity_2;
+			wp = velocity_pivot;
+		}
+		else
+		{
+			wl = norm(encoder_1 - prev_left_enc[i]) / delta_ts; // what about overflows???
+			wr = -norm(encoder_2 - prev_right_enc[i]) / delta_ts; // what about overflows???
+			wp = norm(encoder_pivot - prev_pivot_enc[i]) / delta_ts; // what about overflows??? norm() only makes the angle to be between -3.14 to 3.14
+			if(fabs(velocity_pivot) > 10 * M_PI) wp = velocity_pivot;
+			dt = delta_ts;
+		}
+		prev_left_enc[i] = encoder_1;
+		prev_right_enc[i] = encoder_2;
+		prev_pivot_enc[i] = encoder_pivot;
+		if (wheelConfigs[i].reverseVelocity) {
+			wl *= -1.0;
+			wr *= -1.0;
+		}
+		double theta = norm(encoder_pivot - wheelConfigs[i].a); // encoder_offset can be obtained from the yaml file or smartWheelDriver class
+		double sin_theta = sin(theta);
+		double cos_theta = cos(theta);
+		encDisplacement = (wl + wr) * delta_ts; // for liveliness check //why no absolute? this is used for mileage calculation
+		// calculate velocity components in wheel frame
+		double cx = 0.5 * r_w * (wl + wr);
+		double cy = wp * s_w;
+		// transform to robot frame at pivot position
+		rx[i] = (cx * cos_theta) - (cy * sin_theta);
+		ry[i] = (cx * sin_theta) + (cy * cos_theta);
+		// sum cartesian velocities
+		vx += rx[i];
+		vy += ry[i];
+	}
+	// calcultate cartesian velocity of robot center from average of all wheel units
+	vx /= nWheels;
+	vy /= nWheels;
+
+	double d_sum = 0.0;
+	double v_sum = 0.0;
+	for (int i = 0; i < nWheels; i++) {
+		// substract cartesian robot velocity from wheel velocity.
+		// use reminder to calculate robot angular velocity.
+		rx[i] -= vx;
+		ry[i] -= vy;
+
+		// distance from wheel pivot position to robot center
+		double d = sqrt((wheelConfigs[i].x * wheelConfigs[i].x) + (wheelConfigs[i].y * wheelConfigs[i].y));
+		if(d > 0.0)
+		{
+			double cos_gamma = wheelConfigs[i].x / d;
+			double sin_gamma = wheelConfigs[i].y / d;
+			// Angular velocity around robot center equals the normal velocity component,
+			// from wheel pivot position to robot center, divided by distance to robot center.
+			// By not dividing directly by the distance, but doing this later for with sum of distances,
+			// the sensitivity for wheel positions close to the robot center are compensated. 
+			//
+			//      v1   v2   v3   v4
+			//      -- + -- + -- + --
+			//      d1   d2   d3   d4                               v1 + v2 + v3 + v4
+			// va = ------------------ (standard solution)     va = ----------------- (weighted solution)
+			//          nWheels                                     d1 + d2 + d3 + d4   
+			v_sum += (ry[i] * cos_gamma) - (rx[i] * sin_gamma);
+			d_sum += d; 
+		}
+	}
+	// calculate angular velocity of robot center from average of all wheel units
+	if(d_sum > 0.0) va = v_sum / d_sum;
+}
+
+void PlatformDriverROS::calculateRobotPose2(double vx, double vy, double va, double dt) {
+	double dx = vx * dt;
+	double dy = vy * dt;
+	// simplify circle movement by line between last and current location
+	double a_average = norm(odoma + (0.5 * va * dt));
+	double sin_a = sin(a_average);
+	double cos_a = cos(a_average);
+	// transform displacement to odom frame
+	odomx += (dx * cos_a) - (dy * sin_a);
+	odomy += (dx * sin_a) + (dy * cos_a);
+	odoma = norm(odoma + (va * dt));
 }
 
 void PlatformDriverROS::publishOdometry(double vx, double vy, double va) {
