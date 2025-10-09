@@ -134,6 +134,8 @@ bool PlatformDriverROS::init(ros::NodeHandle& nh, std::string configPrefix) {
 		driver->setMaxvaacc(x);
 	if (nh.getParam("va_dec_max", x))
 		driver->setMaxvadec(x);
+	if (nh.getParam("pivot_vel_damping_gain", x))
+		driver->setPivotVelocityDampingGain(x);
 
 	joyVlinMax = driver->getMaxvlin();
 	joyVaMax = driver->getMaxva();

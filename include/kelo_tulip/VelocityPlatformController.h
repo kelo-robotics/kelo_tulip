@@ -71,6 +71,7 @@ namespace kelo
             void setPlatformMaxAngAcceleration(float max_acc_angular);
             void setPlatformMaxLinDeceleration(float max_dec_linear);
             void setPlatformMaxAngDeceleration(float max_dec_angular);
+            void setPivotVelocityDampingGain(float gain);
             
             void calculatePlatformRampedVelocities();
 
@@ -91,19 +92,19 @@ namespace kelo
             std::vector<WheelParamVelocity> wheel_params_;
 
             Attitude2D platform_target_vel_;
-            Attitude2D platform_ramped_vel_;           
+            Attitude2D platform_ramped_vel_;
 
-        	  struct PlatformLimits {
+            struct PlatformLimits {
                 float max_vel_linear;
                 float max_vel_angular;
                 float max_acc_linear;
                 float max_acc_angular;
                 float max_dec_linear;
                 float max_dec_angular;
-        	  } platform_limits_;
+            } platform_limits_;
 
-        	  boost::posix_time::ptime time_last_ramping;
-        	  bool first_ramping_call;
+            boost::posix_time::ptime time_last_ramping;
+            bool first_ramping_call;
     };
 
 } /* namespace kelo */

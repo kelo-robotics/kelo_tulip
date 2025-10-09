@@ -132,6 +132,7 @@ public:
 	void setFactorAngleaccVlin(double x);
 	void setFractionVelTolerance(double x);
 	void setFractionFactor(double x);
+	void setPivotVelocityDampingGain(double x);
 
 	void setVheadingControlp(double x);
 	void setMaxvheading(double x);
