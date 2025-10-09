@@ -9,6 +9,7 @@
     #vlin_dec_max: 1.0  # m / s^2
     #va_acc_max: 0.5  # rad / s^2
     #va_dec_max: 1.0  # rad / s^2
+    #pivot_vel_damping_gain: 0.9 # between 0.0 to 1.0
 
     wheel0:
       ethercat_number: 3

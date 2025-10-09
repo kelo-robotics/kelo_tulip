@@ -66,6 +66,8 @@ namespace kelo
         platform_limits_.max_dec_linear = 0.5;
         platform_limits_.max_dec_angular = 0.8;
         
+        pivot_vel_damping_gain = 0.9;
+
         first_ramping_call = true;
     }
 
@@ -116,6 +118,14 @@ namespace kelo
             
             wheel_params_.push_back(wheel_param);
         }
+    }
+
+    void VelocityPlatformController::setPivotVelocityDampingGain(float gain)
+    {
+        if (gain < 1.0 &&  gain >= 0.0)
+            pivot_vel_damping_gain = gain;
+        else
+            std::cout << "pivot velocity damping gain value is invalid please use a value between 0.0 and 1.0" << std::endl;
     }
 
     void VelocityPlatformController::setPlatformMaxLinVelocity(float max_vel_linear)
@@ -234,21 +244,6 @@ namespace kelo
         unit_pivot_vector.x = cos(pivot_angle);
         unit_pivot_vector.y = sin(pivot_angle); 
 
-        /* position of wheels relative to platform centre */
-        Point2D position_l, position_r;
-        position_l.x = (wheel_param.relative_position_l.x * unit_pivot_vector.x
-                        - wheel_param.relative_position_l.y * unit_pivot_vector.y)
-                       + wheel_param.pivot_position.x;
-        position_l.y = (wheel_param.relative_position_l.x * unit_pivot_vector.y
-                        + wheel_param.relative_position_l.y * unit_pivot_vector.x)
-                       + wheel_param.pivot_position.y;
-        position_r.x = (wheel_param.relative_position_r.x * unit_pivot_vector.x
-                        - wheel_param.relative_position_r.y * unit_pivot_vector.y)
-                       + wheel_param.pivot_position.x;
-        position_r.y = (wheel_param.relative_position_r.x * unit_pivot_vector.y
-                        + wheel_param.relative_position_r.y * unit_pivot_vector.x)
-                       + wheel_param.pivot_position.y;
-
         /* velocity target vector at pivot position */
         Point2D target_vel_at_pivot;
         target_vel_at_pivot.x = platform_ramped_vel_.x
@@ -256,49 +251,30 @@ namespace kelo
         target_vel_at_pivot.y = platform_ramped_vel_.y
                                 + (platform_ramped_vel_.a * wheel_param.pivot_position.x);
 
-        /* target pivot vector to angle */
-        float target_pivot_angle = atan2(target_vel_at_pivot.y, target_vel_at_pivot.x);
+         /* Project on measured pivot angle */
+        float target_vel_proj_at_pivot = ((target_vel_at_pivot.x * unit_pivot_vector.x)
+                                         + (target_vel_at_pivot.y * unit_pivot_vector.y));
+        float target_vel_normal_at_pivot = ((target_vel_at_pivot.y * unit_pivot_vector.x)
+                                         - (target_vel_at_pivot.x * unit_pivot_vector.y));
+        
+        /* Add damping to the normal velocity */
+        float vel_lin = sqrt(target_vel_at_pivot.x * target_vel_at_pivot.x + target_vel_at_pivot.y * target_vel_at_pivot.y);
+        float damping = pivot_vel_damping_gain * vel_lin / (1.4142 * platform_limits_.max_vel_linear);
+        target_vel_normal_at_pivot -= damping * target_vel_normal_at_pivot;
+        
+        /* Calculate wheel velocities*/
+        float vel_l = target_vel_proj_at_pivot 
+                    + (target_vel_normal_at_pivot * (wheel_param.relative_position_l.y / wheel_param.relative_position_l.x));
+        float vel_r = target_vel_proj_at_pivot 
+                    + (target_vel_normal_at_pivot * (wheel_param.relative_position_r.y / wheel_param.relative_position_r.x));
 
-        /* calculate error pivot angle as shortest route */
-        float pivot_error = Utils::getShortestAngle(target_pivot_angle,
-                                                             pivot_angle);
-
-        /* limit pivot velocity */
-        pivot_error = Utils::clip(pivot_error,
-                                           wheel_param.max_pivot_error,
-                                           -wheel_param.max_pivot_error);
-
-        /* target velocity vector at wheel position */
-        Point2D target_vel_vec_l, target_vel_vec_r;
-        target_vel_vec_l.x = platform_ramped_vel_.x - (platform_ramped_vel_.a * position_l.y);
-        target_vel_vec_l.y = platform_ramped_vel_.y + (platform_ramped_vel_.a * position_l.x);
-        target_vel_vec_r.x = platform_ramped_vel_.x - (platform_ramped_vel_.a * position_r.y);
-        target_vel_vec_r.y = platform_ramped_vel_.y + (platform_ramped_vel_.a * position_r.x);
-
-        /* differential correction speed to minimise pivot_error */
-        float delta_vel = pivot_error * wheel_param.pivot_kp;
-
-        /* target velocity of left wheel (dot product with unit pivot vector) */
-        float vel_l = target_vel_vec_l.x * unit_pivot_vector.x
-                      + target_vel_vec_l.y * unit_pivot_vector.y;
         if (wheel_param.reverse_velocity)
         {
             vel_l *= -1;
-        }
-        float target_vel_l = Utils::clip(vel_l + delta_vel,
-                                                  wheel_param.max_linear_velocity,
-                                                  -wheel_param.max_linear_velocity);
-
-        /* target velocity of right wheel (dot product with unit pivot vector) */
-        float vel_r = target_vel_vec_r.x * unit_pivot_vector.x
-                      + target_vel_vec_r.y * unit_pivot_vector.y;
-        if (wheel_param.reverse_velocity)
-        {
             vel_r *= -1;
         }
-        float target_vel_r = Utils::clip(vel_r - delta_vel,
-                                                  wheel_param.max_linear_velocity,
-                                                  -wheel_param.max_linear_velocity);
+        float target_vel_l = Utils::clip(vel_l, wheel_param.max_linear_velocity, -wheel_param.max_linear_velocity);
+        float target_vel_r = Utils::clip(vel_r, wheel_param.max_linear_velocity, -wheel_param.max_linear_velocity);
 
         /* convert from linear to angular velocity */
         target_ang_vel_l = target_vel_l * wheel_param.linear_to_angular_velocity;

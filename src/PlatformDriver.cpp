@@ -278,6 +278,10 @@ void PlatformDriver::setMaxvadec(double x) {
 	velocityPlatformController.setPlatformMaxAngDeceleration(x);
 }
 
+void PlatformDriver::setPivotVelocityDampingGain(double x) {
+	velocityPlatformController.setPivotVelocityDampingGain(x);
+}
+
 void PlatformDriver::reconnectSlave(int slave) {
 	if(slave >= 0) flagReconnectSlave = true;
 }

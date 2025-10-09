@@ -100,6 +100,7 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	nh->declare_parameter("joy_va_max", 1.0); 
 	nh->declare_parameter("joy_scale", 1.0);
 	nh->declare_parameter("active_by_joypad", false);
+	nh->declare_parameter("pivot_vel_damping_gain", 0.9);
 
 	rclcpp::Parameter num_wheels;
 	if (!nh->get_parameter("num_wheels", num_wheels)) {
@@ -149,6 +150,8 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 		driver->setMaxvaacc(x.as_double());
 	if (nh->get_parameter("va_dec_max", x))
 		driver->setMaxvadec(x.as_double());
+	if (nh->get_parameter("pivot_vel_damping_gain", x))
+		driver->setPivotVelocityDampingGain(x.as_double());
 
 	joyVlinMax = driver->getMaxvlin();
 	joyVaMax = driver->getMaxva();
