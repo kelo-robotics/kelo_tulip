@@ -93,6 +93,8 @@ namespace kelo
 
             Attitude2D platform_target_vel_;
             Attitude2D platform_ramped_vel_;
+            
+            float pivot_vel_damping_gain;
 
             struct PlatformLimits {
                 float max_vel_linear;
