@@ -92,6 +92,14 @@ enum DriverError {
 	DRIVER_ERROR_SLIP = 0x2000
 };
 
+enum WheelState {
+	WHEEL_NORMAL_OPERATION  = 1,
+	WHEEL_FAILURE = 2, //permanent failure
+	WHEEL_STATUS_RECOVERY_SENDING_DISABLE = 3,
+	WHEEL_STATUS_RECOVERY_SENDING_ENABLE  = 4,
+	WHEEL_STATUS_RECOVERY_WAITIING_FOR_NORMAL_OPERATION = 5
+};
+
 class PlatformDriver : public EtherCATModule {
 public:
 	PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, const std::vector<WheelData>& wheelData);
@@ -155,6 +163,7 @@ protected:
 	void updateSetpoints();
 	virtual void doStop();
 	virtual void doControl();
+	void doWheelRecovery(unsigned int wheel);
 
 	bool hasWheelStatusEnabled(unsigned int wheel);
 	bool hasWheelStatusError(unsigned int wheel);
@@ -209,6 +218,17 @@ protected:
 
 	volatile bool statusError;
 	volatile bool timestampError;
+
+	//recovery behavior
+	std::vector<WheelState> wheelState;
+	std::vector<unsigned int> recoveryAttempt;
+	std::vector<boost::posix_time::ptime> lastWheelStateEntry;
+	std::vector<boost::posix_time::ptime> lastRecoveryAttempt;
+	unsigned int maxRecoveryAttempts;
+	double tRecoveryReenable;
+	double tRecoveryDisable;
+	double tRecoveryRetry;
+	double tRecoveryCounterReset;
 
 private:
 	PlatformDriver(const PlatformDriver&);

@@ -107,6 +107,17 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	lastProcessData.resize(nWheels);
 
 	velocityPlatformController.initialise(wheelConfigs);
+
+	//recovery behavior
+	wheelState.resize(nWheels, WHEEL_NORMAL_OPERATION);
+	recoveryAttempt.resize(nWheels, 0);
+	lastWheelStateEntry.resize(nWheels);
+	lastRecoveryAttempt.resize(nWheels);
+	maxRecoveryAttempts = 10;
+	tRecoveryDisable = 10.0; //milliseconds
+	tRecoveryReenable = 1.0; //milliseconds
+	tRecoveryRetry = 100.0; //milliseconds
+	tRecoveryCounterReset = 30000.0; //milliseconds
 }
 
 PlatformDriver::~PlatformDriver() {
@@ -523,8 +534,10 @@ void PlatformDriver::doControl() {
 
 	// update desired velocity of platform, based on target velocity and velocity ramps
 	velocityPlatformController.calculatePlatformRampedVelocities();
-	
+
 	for (int i = 0; i < nWheels; i++) {
+		doWheelRecovery(i);
+
 		if (wheelEnabled[i])
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 		else
@@ -560,5 +573,81 @@ void PlatformDriver::doControl() {
 		setWheelProcessData(i, &rxdata);
 	}
 }
+
+void PlatformDriver::doWheelRecovery(unsigned int wheel) {
+	boost::posix_time::ptime now = boost::posix_time::microsec_clock::local_time();
+	double tStateMs = (now - lastWheelStateEntry[wheel]).total_milliseconds();
+	double tLastRecoveryMs = (now - lastRecoveryAttempt[wheel]).total_milliseconds();
+
+	switch (wheelState[wheel]) {
+		case WHEEL_NORMAL_OPERATION:
+			if (processData[wheel].status1 == 60 && processData[wheel].status2 == 2051 && wheelEnabled[wheel]) {
+				recoveryAttempt[wheel]++;
+				if(recoveryAttempt[wheel] <= maxRecoveryAttempts) {
+					std::cout << "Start wheel " << wheel << " recovery" << std::endl;
+					wheelState[wheel] = WHEEL_STATUS_RECOVERY_SENDING_DISABLE; // state in next cycle
+					lastWheelStateEntry[wheel] = now;
+					lastRecoveryAttempt[wheel] = now;
+				} else {
+					std::cout << "Wheel " << wheel << " could not be recovered. Stopping operation" << std::endl;
+					wheelState[wheel] = WHEEL_FAILURE;
+					lastWheelStateEntry[wheel] = now;
+				}
+			}
+
+			/*
+			 * Reset the number of attempts after a certain duration of normal operation.
+			 * This is a form of error escalation.
+			 */
+			if(tLastRecoveryMs > tRecoveryCounterReset) {
+				if (recoveryAttempt[wheel] > 0) {
+					std::cout << "Wheel " << wheel << " recovery attempts are reset to 0." << std::endl;
+					recoveryAttempt[wheel] = 0;
+				}
+			}
+			break;
+
+		case WHEEL_FAILURE:
+			//disable (permanently)
+			break;
+
+		case WHEEL_STATUS_RECOVERY_SENDING_DISABLE:
+			wheelEnabled[wheel] = false;
+
+			if(tStateMs > tRecoveryDisable) {
+				wheelState[wheel] = WHEEL_STATUS_RECOVERY_SENDING_ENABLE;
+				lastWheelStateEntry[wheel] = now;
+			}
+			break;
+
+		case WHEEL_STATUS_RECOVERY_SENDING_ENABLE:
+			wheelEnabled[wheel] = true;
+
+			if(tStateMs > tRecoveryReenable) {
+				wheelState[wheel] = WHEEL_STATUS_RECOVERY_WAITIING_FOR_NORMAL_OPERATION;
+				lastWheelStateEntry[wheel] = now;
+			}
+			break;
+
+		case WHEEL_STATUS_RECOVERY_WAITIING_FOR_NORMAL_OPERATION:
+			if (processData[wheel].status1 == 60 && processData[wheel].status2 == 2051 && wheelEnabled[wheel]) {
+				if(tStateMs > tRecoveryRetry)
+				{
+					std::cout << "Wheel " << wheel << " recovery failed" << std::endl;
+					wheelState[wheel] = WHEEL_NORMAL_OPERATION;
+					lastWheelStateEntry[wheel]  = now;
+				}
+			} else {
+				std::cout << "Wheel " << wheel << " recovery successful" << std::endl;
+				wheelState[wheel] = WHEEL_NORMAL_OPERATION;
+				lastWheelStateEntry[wheel] = now;
+			}
+			break;
+
+		default:
+			break;
+	}
+}
+
 
 } //namespace kelo
