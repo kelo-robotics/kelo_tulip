@@ -147,11 +147,14 @@ int main (int argc, char** argv)
 	// ROS main loop
 	rclcpp::Rate rate(20.0f); // hz
 	while (rclcpp::ok()) {
+		if (master->needsReinit())
+			master->reinitializeEthercat();
+		
 		rclcpp::spin_some(nh);		
-
+		
 		for (size_t i = 0; i < rosModules.size(); i++)
 			rosModules[i]->step();
-			
+		
 		rate.sleep();
 	}
 

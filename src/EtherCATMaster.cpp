@@ -55,7 +55,8 @@ EtherCATMaster::EtherCATMaster(std::string device, std::vector<EtherCATModule*> 
 	pauseThreadMs = 0;
 	flagReconnectSlave = false;
 	expectedWKC = 0;
-
+	reinitializeFlag = false;
+	
 	EcatError = FALSE;
 	ethercatWkcError = false;
 
@@ -389,16 +390,57 @@ void EtherCATMaster::ethercatCheck(void)
                }
 			   osal_usleep(1000);
             }
-            if((wkc == expectedWKC) && (!ec_group[currentgroup].docheckstate))
+            if((wkc == expectedWKC) && (!ec_group[currentgroup].docheckstate)) {
                printf("OK : all slaves resumed OPERATIONAL.\n");
+               reinitializeFlag = true;
+			}
         }
         osal_usleep(20000);
     }
 	std::cout << "Stopped EtherCAT Check thread" << std::endl;
 }
 
+bool EtherCATMaster::reinitializeEthercat() {
+    stopThread = true;
+    if (ethercatThread && ethercatThread->joinable()) {
+        ethercatThread->join();
+        delete ethercatThread;
+        ethercatThread = nullptr;
+    }
+
+    if (ethercatCheckThread && ethercatCheckThread->joinable()) {
+        ethercatCheckThread->join();
+        delete ethercatCheckThread;
+        ethercatCheckThread = nullptr;
+    }
+
+    // Close current EtherCAT connection
+    closeEthercat();
+
+    // Reset flags
+    ethercatInitialized = false;
+    inOP = false;
+    stopThread = false;
+    reinitializeFlag = false;
+    wkc = 0;
+    ethercatWkcError = false;
+    std::cout << "REINITIALIZE ETHERCAT NOW" << std::endl;
+    // Call initEthercat() to reinitialize everything
+    bool ok = initEthercat();
+    if (ok) {
+        std::cout << "[EtherCAT] Reinitialization completed successfully." << std::endl;
+    } else {
+        std::cout << "[EtherCAT] Reinitialization FAILED!" << std::endl;
+    }
+    return ok;
+}
+
 bool EtherCATMaster::hasWkcError() {
 	return ethercatWkcError;
+}
+
+bool EtherCATMaster::needsReinit() {
+	return reinitializeFlag;
 }
 
 void EtherCATMaster::resetErrorFlags() {

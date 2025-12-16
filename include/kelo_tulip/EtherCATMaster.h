@@ -73,7 +73,9 @@ public:
 	void pauseEthercat(int ms);
 	void printEthercatStatus();
 	void reconnectSlave(int slave);
-
+	bool reinitializeEthercat();
+	bool needsReinit();
+	
 	bool hasWkcError();
 	void resetErrorFlags();
 
@@ -115,6 +117,7 @@ protected:
 	volatile bool ethercatWkcError;
 	volatile bool flagReconnectSlave;
 
+	bool reinitializeFlag;
 	std::vector<EtherCATModule*> modules;
 
 private:
