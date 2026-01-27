@@ -56,6 +56,7 @@ EtherCATMaster::EtherCATMaster(std::string device, std::vector<EtherCATModule*> 
 	flagReconnectSlave = false;
 	expectedWKC = 0;
 	reinitializeFlag = false;
+	maxReinitializationAttempt = 3;
 	
 	EcatError = FALSE;
 	ethercatWkcError = false;
@@ -392,8 +393,11 @@ void EtherCATMaster::ethercatCheck(void)
             }
             if((wkc == expectedWKC) && (!ec_group[currentgroup].docheckstate)) {
                printf("OK : all slaves resumed OPERATIONAL.\n");
-               reinitializeFlag = true;
-			}
+            }
+
+            if ((wkc > 0) && (!ec_group[currentgroup].docheckstate)) {
+               reinitializeFlag = true;  
+            }
         }
         osal_usleep(20000);
     }
@@ -401,38 +405,48 @@ void EtherCATMaster::ethercatCheck(void)
 }
 
 bool EtherCATMaster::reinitializeEthercat() {
-    stopThread = true;
-    if (ethercatThread && ethercatThread->joinable()) {
-        ethercatThread->join();
-        delete ethercatThread;
-        ethercatThread = nullptr;
-    }
+	std::cout << "Start Ethercat Reinitialization" << std::endl;
+	stopThread = true;
+	if (ethercatThread && ethercatThread->joinable()) {
+		ethercatThread->join();
+		delete ethercatThread;
+		ethercatThread = nullptr;
+	}
 
-    if (ethercatCheckThread && ethercatCheckThread->joinable()) {
-        ethercatCheckThread->join();
-        delete ethercatCheckThread;
-        ethercatCheckThread = nullptr;
-    }
+	if (ethercatCheckThread && ethercatCheckThread->joinable()) {
+		ethercatCheckThread->join();
+		delete ethercatCheckThread;
+		ethercatCheckThread = nullptr;
+	}
 
-    // Close current EtherCAT connection
-    closeEthercat();
+	// Close current EtherCAT connection
+	closeEthercat();
 
-    // Reset flags
-    ethercatInitialized = false;
-    inOP = false;
-    stopThread = false;
-    reinitializeFlag = false;
-    wkc = 0;
-    ethercatWkcError = false;
-    std::cout << "REINITIALIZE ETHERCAT NOW" << std::endl;
-    // Call initEthercat() to reinitialize everything
-    bool ok = initEthercat();
-    if (ok) {
-        std::cout << "[EtherCAT] Reinitialization completed successfully." << std::endl;
-    } else {
-        std::cout << "[EtherCAT] Reinitialization FAILED!" << std::endl;
-    }
-    return ok;
+	// Reset flags
+	ethercatInitialized = false;
+	inOP = false;
+	stopThread = false;
+	reinitializeFlag = false;
+	wkc = 0;
+	ethercatWkcError = false;
+
+	// Call initEthercat() to reinitialize everything
+	int retryCount = 0;
+	bool success = false;
+	while (!success && retryCount < maxReinitializationAttempt) {
+		success = initEthercat();
+		retryCount++;
+		if (success) {
+			std::cout << "[EtherCAT] Reinitialization completed successfully." << std::endl;
+		} else {
+			osal_usleep(200000);
+			if (retryCount < maxReinitializationAttempt)
+				std::cout << "[EtherCAT] Reinitialization FAILED! Retrying" << std::endl;
+			else
+				std::cout << "[EtherCAT] Reinitialization attempt exceeded maximum limit" << std::endl;
+		}
+	}
+	return success;
 }
 
 bool EtherCATMaster::hasWkcError() {

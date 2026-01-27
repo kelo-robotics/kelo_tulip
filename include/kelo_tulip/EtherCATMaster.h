@@ -118,6 +118,7 @@ protected:
 	volatile bool flagReconnectSlave;
 
 	bool reinitializeFlag;
+	int maxReinitializationAttempt;
 	std::vector<EtherCATModule*> modules;
 
 private:
