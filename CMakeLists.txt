@@ -107,6 +107,11 @@ ament_target_dependencies(tulip_library
 	Boost
 )
 
+target_link_libraries(tulip_library
+	soem
+	tulip_velocity_controller
+)
+
 if ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
 	rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
 	target_link_libraries(tulip_library "${cpp_typesupport_target}")
@@ -121,8 +126,6 @@ add_executable(platform_driver
 target_link_libraries(platform_driver   
 	${Boost_LIBRARIES}
 	tulip_library
-	tulip_velocity_controller
-	soem
 	pthread
 )
 
@@ -138,6 +141,8 @@ target_link_libraries(platform_driver
 install(TARGETS
 	tulip_library
 	tulip_velocity_controller
+	soem
+	EXPORT export_${PROJECT_NAME}
 	DESTINATION lib
 )
 
@@ -191,13 +196,13 @@ install(DIRECTORY
 	DESTINATION share/${PROJECT_NAME}/
 )
 
-install(
-	TARGETS tulip_library tulip_velocity_controller
-	EXPORT export_${PROJECT_NAME}
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
-	RUNTIME DESTINATION bin
-)
+#install(
+	#TARGETS tulip_library tulip_velocity_controller
+	#EXPORT export_${PROJECT_NAME}
+	#LIBRARY DESTINATION lib
+	#ARCHIVE DESTINATION lib
+	#RUNTIME DESTINATION bin
+#)
 
 ament_export_targets(export_${PROJECT_NAME} HAS_LIBRARY_TARGET)
 ament_export_dependencies(rosidl_default_runtime)
