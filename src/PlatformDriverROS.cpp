@@ -50,18 +50,11 @@ PlatformDriverROS::PlatformDriverROS()
 	: driver(NULL)
 	, odom_broadcaster(nullptr)
 {
-	s_w = 0.01; //caster offset of a smartWheel
-	d_w = 0.0775; //distance between the left and the right wheel
-	s_d_ratio = s_w / d_w;	
-	r_w = 0.0524; //the radius of the wheel
-
 	nWheels = 0;
 
 	useJoy = false;
 	debugMode = false;
 	activeByJoypad = false;
-
-	currentMax = 20;
 
 	joyVlinMax = 1.0;
 	joyVaMax = 1.0;
@@ -86,9 +79,6 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	this->nh = nh;
 	
 	nh->declare_parameter("num_wheels", 0);
-	nh->declare_parameter("current_stop", 20.0);
-	nh->declare_parameter("current_drive", 20.0);
-	nh->declare_parameter("current_max", 20.0);
 	nh->declare_parameter("vlin_max", 1.0);
 	nh->declare_parameter("va_max", 1.0);
 	nh->declare_parameter("vlin_acc_max", 0.5);
@@ -128,13 +118,6 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 
 	// set driver control parameters
 	rclcpp::Parameter x;
-	if (nh->get_parameter("current_stop", x))
-		driver->setCurrentStop(x.as_double());
-	if (nh->get_parameter("current_drive", x))
-		driver->setCurrentDrive(x.as_double());
-	if (nh->get_parameter("current_max", x))
-		currentMax = x.as_double();
-		
 	if (nh->get_parameter("vlin_max", x))
 		driver->setMaxvlin(x.as_double());
 	if (nh->get_parameter("va_max", x))
@@ -179,7 +162,6 @@ bool PlatformDriverROS::init(rclcpp::Node::SharedPtr nh, std::string configPrefi
 	resetSubscriber = nh->create_subscription<std_msgs::msg::Empty>("reset", 1, std::bind(&PlatformDriverROS::resetCallback, this, std::placeholders::_1));
 	enableSubscriber = nh->create_subscription<std_msgs::msg::Int32MultiArray>("wheels_enable", 10, std::bind(&PlatformDriverROS::enableCallback, this, std::placeholders::_1));
 	
-//	ros::Subscriber currentMaxSubscriber = nh.subscribe("current_max", 1, currentMaxCallback);
 	odom_broadcaster = std::make_unique<tf2_ros::TransformBroadcaster>(nh);
 	
 	initializeEncoderValue();
@@ -191,9 +173,9 @@ bool PlatformDriverROS::step() {
 	checkAndPublishSmartWheelStatus();
 
 	//calculate robot velocity
-	double vx, vy, va, encDisplacement, dt;
-	//calculateRobotVelocity(vx, vy, va, encDisplacement);
-	calculateRobotVelocity2(vx, vy, va, encDisplacement, dt);
+	double vx, vy, va, displacement, dt;
+	//calculateRobotVelocity(vx, vy, va, displacement);
+	calculateRobotVelocity2(vx, vy, va, displacement, dt);
 
 	//calculate robot displacement and current pose
 	//calculateRobotPose(vx, vy, va);
@@ -257,6 +239,7 @@ void PlatformDriverROS::readWheelModels() {
 		nh->declare_parameter(prefix + "canPivot", true);
 		nh->declare_parameter(prefix + "velocitylimit", 100.0);
 		nh->declare_parameter(prefix + "currentlimit", 10.0);
+		nh->declare_parameter(prefix + "standbycurrent", 1.0);
 
 		WheelModel wm;
 		wm.name = name;
@@ -268,6 +251,7 @@ void PlatformDriverROS::readWheelModels() {
 		wm.canPivot = nh->get_parameter(prefix + "canPivot").as_bool();
 		wm.velocitylimit = nh->get_parameter(prefix + "velocitylimit").as_double();
 		wm.currentlimit = nh->get_parameter(prefix + "currentlimit").as_double();
+		wm.standbycurrent = nh->get_parameter(prefix + "standbycurrent").as_double();
 		wheelModels[name] = wm;
 	}
 	
@@ -393,25 +377,30 @@ void PlatformDriverROS::initializeEncoderValue() {
 	}
 }
 
-void PlatformDriverROS::calculateRobotVelocity(double& vx, double& vy, double& va, double& encDisplacement) {
+void PlatformDriverROS::calculateRobotVelocity(double& vx, double& vy, double& va, double& displacement) {
 	double dt = 0.05;
 	
 	//initialize the variables
 	vx = 0;
 	vy = 0;
 	va = 0;
-	encDisplacement = 0;
+	displacement = 0;
 	
 	for (int i = 0; i < nWheels; i++) {
+		double r_w = wheelConfigs[i].model.diameter / 2.0;
+		double d_w = wheelConfigs[i].model.wheeldistance;
+		double s_w = wheelConfigs[i].model.casteroffset;
+		double s_d_ratio = s_w / d_w;
+
 		txpdo1_t* swData = driver->getWheelProcessData(i);
 		std::vector<double> encoderValue = driver->getEncoderValue(i);
 		double wl = (encoderValue[0] - prev_left_enc[i]) / dt;
 		double wr = -(encoderValue[1] - prev_right_enc[i]) / dt;
-		encDisplacement += fabs(encoderValue[0] - prev_left_enc[i]) + fabs(encoderValue[1] - prev_right_enc[i]);
+		displacement += 0.5 * wheelConfigs[i].model.diameter * (fabs(norm(encoderValue[0] - prev_left_enc[i])) + fabs(norm(encoderValue[1] - prev_right_enc[i])));
 		prev_left_enc[i] = encoderValue[0];
 		prev_right_enc[i] = encoderValue[1];
 		double theta = norm(swData->encoder_pivot - wheelConfigs[i].a); // encoder_offset can be obtained from the yaml file or smartWheelDriver class
-//std::cout << "theta " << i << ": " << theta << std::endl;
+
 		if (!wheelConfigs[i].reverseVelocity) {
 			vx += r_w * ((wl + wr) * cos(theta)); // + 2 * s_d_ratio * (wl - wr) * sin(theta));
 			vy += r_w * ((wl + wr) * sin(theta)); // - 2 * s_d_ratio * (wl - wr) * cos(theta));
@@ -430,9 +419,12 @@ void PlatformDriverROS::calculateRobotVelocity(double& vx, double& vy, double& v
 		//va += 4*swData->gyro_y;
 	}
 	// averaging the wheel velocity
-	vx = vx / nWheels / 2;
-	vy = vy / nWheels / 2;
-	va = va / nWheels / 2;
+	int nHubWheels = 2 * nWheels;
+	if (nWheels > 0) {
+		vx = vx / nHubWheels;
+		vy = vy / nHubWheels;
+		va = va / nHubWheels;
+	}
 }
 
 void PlatformDriverROS::calculateRobotPose(double vx, double vy, double va) {
@@ -465,7 +457,7 @@ void PlatformDriverROS::calculateRobotPose(double vx, double vy, double va) {
 	odoma = norm(odoma + va * dt);
 }
 
-void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& va, double& encDisplacement, double &dt) {
+void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& va, double& displacement, double &dt) {
 	dt = 0.05; // Target delta time. Replaced by real delta from sensor timestamps, when available.
 	std::vector<double> rx;
 	rx.resize(nWheels, 0);
@@ -476,7 +468,7 @@ void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& 
 	vx = 0;
 	vy = 0;
 	va = 0;
-	encDisplacement = 0;
+	displacement = 0;
 	
 	for (int i = 0; i < nWheels; i++) {
 		volatile txpdo1_t* swData = driver->getWheelProcessData(i);
@@ -507,9 +499,9 @@ void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& 
 		}
 		else
 		{
-			wl = norm(encoder_1 - prev_left_enc[i]) / delta_ts; // what about overflows???
-			wr = -norm(encoder_2 - prev_right_enc[i]) / delta_ts; // what about overflows???
-			wp = norm(encoder_pivot - prev_pivot_enc[i]) / delta_ts; // what about overflows??? norm() only makes the angle to be between -3.14 to 3.14
+			wl = norm(encoder_1 - prev_left_enc[i]) / delta_ts;
+			wr = -norm(encoder_2 - prev_right_enc[i]) / delta_ts;
+			wp = norm(encoder_pivot - prev_pivot_enc[i]) / delta_ts;
 			if(fabs(velocity_pivot) > 10 * M_PI) wp = velocity_pivot;
 			dt = delta_ts;
 		}
@@ -523,10 +515,12 @@ void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& 
 		double theta = norm(encoder_pivot - wheelConfigs[i].a); // encoder_offset can be obtained from the yaml file or smartWheelDriver class
 		double sin_theta = sin(theta);
 		double cos_theta = cos(theta);
-		encDisplacement = (wl + wr) * delta_ts; // for liveliness check //why no absolute? this is used for mileage calculation
+		displacement = (wl + wr) * delta_ts; // for liveliness check
+
 		// calculate velocity components in wheel frame
-		double cx = 0.5 * r_w * (wl + wr);
-		double cy = wp * s_w;
+		double cx = 0.5 * (0.5 * wheelConfigs[i].model.diameter) * (wl + wr);
+		double cy = wp * wheelConfigs[i].model.casteroffset;
+
 		// transform to robot frame at pivot position
 		rx[i] = (cx * cos_theta) - (cy * sin_theta);
 		ry[i] = (cx * sin_theta) + (cy * cos_theta);
@@ -535,8 +529,10 @@ void PlatformDriverROS::calculateRobotVelocity2(double& vx, double& vy, double& 
 		vy += ry[i];
 	}
 	// calcultate cartesian velocity of robot center from average of all wheel units
-	vx /= nWheels;
-	vy /= nWheels;
+	if (nWheels > 1) {
+		vx /= nWheels;
+		vy /= nWheels;
+	}
 
 	double d_sum = 0.0;
 	double v_sum = 0.0;
@@ -747,11 +743,6 @@ void PlatformDriverROS::cmdVelCallback(const geometry_msgs::msg::Twist::SharedPt
 	//if (!useJoy && !debugMode)
 	if (!useJoy)
 		driver->setTargetVelocity(msg->linear.x, msg->linear.y, msg->angular.z);
-}
-
-void PlatformDriverROS::currentMaxCallback(const std_msgs::msg::Float32::SharedPtr msg) const {
-	if (msg->data >= 0 && msg->data <= currentMax)
-		driver->setCurrentDrive(msg->data);
 }
 
 void PlatformDriverROS::resetCallback(const std_msgs::msg::Empty::SharedPtr msg) const {

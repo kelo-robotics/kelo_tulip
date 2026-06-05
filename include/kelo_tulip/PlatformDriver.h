@@ -114,10 +114,6 @@ public:
 
 	void reconnectSlave(int slave);
 
-	void setCurrentStop(double x);
-	void setCurrentDrive(double x);
-	double getCurrentDrive();
-
 	void setCanChangeActive();
 
 	void setMaxvlin(double x);
@@ -191,12 +187,6 @@ protected:
 	int firstWheel, nWheels;
 	std::vector<WheelConfig> wheelConfigs;
 	std::vector<WheelData> wheelData;
-	
-	double maxCalibrationTime;
-	double vCalibration;
-	double currentCalibration;
-	double currentStop;
-	double currentDrive;
 
 	double maxvlin;
 	double maxva;

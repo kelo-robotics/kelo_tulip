@@ -94,9 +94,9 @@ protected:
 	void checkAndPublishSmartWheelStatus();
 	
 	void initializeEncoderValue();
-	void calculateRobotVelocity(double& vx, double& vy, double& va, double& encDisplacement);
+	void calculateRobotVelocity(double& vx, double& vy, double& va, double& displacement);
 	void calculateRobotPose(double vx, double vy, double va);
-	void calculateRobotVelocity2(double& vx, double& vy, double& va, double& encDisplacement, double &dt);
+	void calculateRobotVelocity2(double& vx, double& vy, double& va, double& displacement, double &dt);
 	void calculateRobotPose2(double vx, double vy, double va, double dt);
 	void publishOdometry(double vx, double vy, double va);
 	void createOdomToBaseLinkTransform(geometry_msgs::msg::TransformStamped& odom_trans);
@@ -107,7 +107,6 @@ protected:
 
 	void joyCallback(const sensor_msgs::msg::Joy::SharedPtr joy);
 	void cmdVelCallback(const geometry_msgs::msg::Twist::SharedPtr msg) const;
-	void currentMaxCallback(const std_msgs::msg::Float32::SharedPtr msg) const;
 	void resetCallback(const std_msgs::msg::Empty::SharedPtr msg) const;
 	void enableCallback(const std_msgs::msg::Int32MultiArray::SharedPtr msg) const;
 
@@ -136,19 +135,12 @@ protected:
 	rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmdVelSubscriber;
 	rclcpp::Subscription<std_msgs::msg::Empty>::SharedPtr resetSubscriber;
 	rclcpp::Subscription<std_msgs::msg::Int32MultiArray>::SharedPtr enableSubscriber;
-		
-	double s_w; //caster offset of a smartWheel
-	double d_w; //distance between the left and the right wheel
-	double s_d_ratio;	
-	double r_w; //the radius of the wheel
 
 	int nWheels;
 
 	bool useJoy;
 	bool debugMode;
 	bool activeByJoypad;
-
-	double currentMax;
 
 	double joyVlinMax;
 	double joyVaMax;

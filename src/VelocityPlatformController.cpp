@@ -96,6 +96,7 @@ namespace kelo
             float wheel_diameter = wheel_configs[i].model.diameter;
             float wheel_caster = wheel_configs[i].model.casteroffset;
             float wheel_distance = wheel_configs[i].model.wheeldistance;
+            float velocity_limit = wheel_configs[i].model.velocitylimit;
 
             WheelParamVelocity wheel_param;
             wheel_param.relative_position_l.x = -1 * wheel_caster;
@@ -104,7 +105,7 @@ namespace kelo
             wheel_param.relative_position_r.y = -0.5 * wheel_distance;
             wheel_param.angular_to_linear_velocity = 0.5 * wheel_diameter;
             wheel_param.linear_to_angular_velocity = 1.0 / wheel_param.angular_to_linear_velocity;
-            wheel_param.max_linear_velocity = 100.0 * wheel_param.angular_to_linear_velocity;
+            wheel_param.max_linear_velocity = velocity_limit * wheel_param.angular_to_linear_velocity;
             wheel_param.pivot_kp = 0.2f;
             wheel_param.wheel_diameter = wheel_diameter;
             wheel_param.max_pivot_error = M_PI * 0.25f;

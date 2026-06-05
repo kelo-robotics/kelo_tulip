@@ -60,6 +60,7 @@ struct WheelModel {
 	bool canPivot;
 	double velocitylimit;    // [rad/s] for one hubwheel
 	double currentlimit;
+	double standbycurrent;
 	
 	WheelModel() {
 		name = "KELOdrive105";
@@ -70,7 +71,8 @@ struct WheelModel {
 		wheeldistance = 0.080;
 		canPivot = true;
 		velocitylimit = 100.0;
-		currentlimit = 10.0;
+		currentlimit = 20.0;
+		standbycurrent = 1.0;
 	}
 };
 

@@ -70,9 +70,6 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	wheelEnabled.resize(nWheels, true);
 
 	// controller parameters
-	currentStop = 1;
-	currentDrive = 20;
-
 	maxvlin = 1.5;
 	maxva = 1.0;
 	maxvlinacc = 0.0025; // per msec, same value for dec
@@ -221,22 +218,9 @@ void PlatformDriver::setTargetVelocity(double vx, double vy, double va) {
 	velocityPlatformController.setPlatformTargetVelocity(vx, vy, va);
 }
 
-void PlatformDriver::setCurrentStop(double x) {
-	currentStop = x;
-}
-
-void PlatformDriver::setCurrentDrive(double x) {
-	currentDrive = x;
-}
-
-double PlatformDriver::getCurrentDrive() {
-	return currentDrive;
-}
-
 void PlatformDriver::setCanChangeActive() {
 	canChangeActive = true;
 }
-
 
 void PlatformDriver::setMaxvlin(double x) {
 	maxvlin = x;
@@ -491,11 +475,6 @@ void PlatformDriver::updateEncoders() {
 void PlatformDriver::doStop() {
 	rxpdo1_t rxdata;
 	rxdata.timestamp = current_ts + 100 * 1000; // TODO
-	//rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
-	rxdata.limit1_p = currentStop;
-	rxdata.limit1_n = -currentStop;
-	rxdata.limit2_p = currentStop;
-	rxdata.limit2_n = -currentStop;
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
 
@@ -505,6 +484,11 @@ void PlatformDriver::doStop() {
 		else
 			rxdata.command1 = COM1_MODE_VELOCITY;
 		
+		rxdata.limit1_p = wheelConfigs[i].model.standbycurrent;
+		rxdata.limit1_n = -wheelConfigs[i].model.standbycurrent;
+		rxdata.limit2_p = wheelConfigs[i].model.standbycurrent;
+		rxdata.limit2_n = -wheelConfigs[i].model.standbycurrent;
+
 		setWheelProcessData(i, &rxdata);
 	}
 }
@@ -513,11 +497,6 @@ void PlatformDriver::doControl() {
 	/* initialise struct to be sent to wheels */
 	rxpdo1_t rxdata;
 	rxdata.timestamp = current_ts + 100 * 1000; // TODO
-	//rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
-	rxdata.limit1_p = currentDrive;
-	rxdata.limit1_n = -currentDrive;
-	rxdata.limit2_p = currentDrive;
-	rxdata.limit2_n = -currentDrive;
 	rxdata.setpoint1 = 0;
 	rxdata.setpoint2 = 0;
 
@@ -529,7 +508,12 @@ void PlatformDriver::doControl() {
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 		else
 			rxdata.command1 = COM1_MODE_VELOCITY;
-		
+			
+		rxdata.limit1_p = wheelConfigs[i].model.currentlimit;
+		rxdata.limit1_n = -wheelConfigs[i].model.currentlimit;
+		rxdata.limit2_p = wheelConfigs[i].model.currentlimit;
+		rxdata.limit2_n = -wheelConfigs[i].model.currentlimit;
+
 		txpdo1_t* wheel_data = getWheelProcessData(i);
 
 		float setpoint1, setpoint2;
