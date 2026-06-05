@@ -484,6 +484,7 @@ void PlatformDriver::doStop() {
 		else
 			rxdata.command1 = COM1_MODE_VELOCITY;
 		
+		rxdata.command2 = COM2_UNUSED;
 		rxdata.limit1_p = wheelConfigs[i].model.standbycurrent;
 		rxdata.limit1_n = -wheelConfigs[i].model.standbycurrent;
 		rxdata.limit2_p = wheelConfigs[i].model.standbycurrent;
@@ -508,7 +509,8 @@ void PlatformDriver::doControl() {
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
 		else
 			rxdata.command1 = COM1_MODE_VELOCITY;
-			
+		
+		rxdata.command2 = COM2_UNUSED;	
 		rxdata.limit1_p = wheelConfigs[i].model.currentlimit;
 		rxdata.limit1_n = -wheelConfigs[i].model.currentlimit;
 		rxdata.limit2_p = wheelConfigs[i].model.currentlimit;
