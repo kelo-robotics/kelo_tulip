@@ -65,47 +65,48 @@
 #define STAT2_UNUSED			0x0000
 
 typedef struct PACKED{
-  uint16_t		status1;			// Status bits as defined in STAT1_
-  uint16_t		status2;			// Status bits as defined in STAT2_
-  uint64_t		sensor_ts;			// EtherCAT timestamp (ns) on sensor acquisition 
-  uint64_t		setpoint_ts;		// EtherCAT timestamp (ns) of last setpoint data
-  float			encoder_1;			// encoder 1 value in rad (no wrapping at 2PI)
-  float			velocity_1;			// encoder 1 velocity in rad/s
-  float			current_1_d;		// motor 1 current direct in amp
-  float			current_1_q;		// motor 1 current quadrature in amp
-  float			current_1_u;		// motor 1 current phase U in amp
-  float			current_1_v;		// motor 1 current phase V in amp
-  float			current_1_w;		// motor 1 current phase W in amp
-  float			voltage_1;			// motor 1 voltage from pwm in volts
-  float			voltage_1_u;		// motor 1 voltage from phase U in volts
-  float			voltage_1_v;		// motor 1 voltage from phase V	in volts
-  float			voltage_1_w;		// motor 1 voltage from phase W in volts
-  float			temperature_1;		// motor 1 estimated temperature in K
-  float			encoder_2;			// encoder 2 value in rad (no wrapping at 2PI)
-  float			velocity_2;         // encoder 2 velocity in rad/s
-  float			current_2_d;		// motor 2 current direct in amp
-  float			current_2_q;		// motor 2 current quadrature in amp
-  float			current_2_u;		// motor 2 current phase U in amp
-  float			current_2_v;		// motor 2 current phase V in amp
-  float			current_2_w;		// motor 2 current phase W in amp
-  float			voltage_2;			// motor 2 voltage from pwm in volts
-  float			voltage_2_u;		// motor 2 voltage from phase U in volts
-  float			voltage_2_v;		// motor 2 voltage from phase V	in volts
-  float			voltage_2_w;		// motor 2 voltage from phase W in volts
-  float			temperature_2;		// motor 2 estimated temperature in K
-  float			encoder_pivot;		// encoder pivot value in rad (wrapping at -PI and +PI)
-  float			velocity_pivot;		// encoder pivot velocity in rad/s
-  float			voltage_bus;		// bus voltage in volts
-  uint64_t		imu_ts;				// EtherCAT timestamp (ns) of IMU sensor acquisition
-  float			accel_x;			// IMU accelerometer X-axis in m/s2
-  float			accel_y;			// IMU accelerometer Y-axis in m/s2
-  float			accel_z;			// IMU accelerometer Z-axis in m/s2
-  float			gyro_x;				// IMU gyro X-axis in rad/s
-  float			gyro_y;				// IMU gyro Y-axis in rad/s
-  float			gyro_z;				// IMU gyro Z-axis in rad/s
-  float			temperature_imu;	// IMU temperature in K	
-  float			pressure;			// barometric pressure in Pa absolute
-  float			current_in;			// current input
+  uint16_t      ddata;
+  uint16_t      status1;            // Status bits as defined in STAT1_
+  uint16_t      status2;            // Status bits as defined in STAT2_
+  uint64_t      sensor_ts;          // EtherCAT timestamp (ns) on sensor acquisition 
+  uint64_t      setpoint_ts;        // EtherCAT timestamp (ns) of last setpoint data
+  float         encoder_1;          // encoder 1 value in rad (no wrapping at 2PI)
+  float         velocity_1;         // encoder 1 velocity in rad/s
+  float         current_1_d;        // motor 1 current direct in amp
+  float         current_1_q;        // motor 1 current quadrature in amp
+  float         current_1_u;        // motor 1 current phase U in amp
+  float         current_1_v;        // motor 1 current phase V in amp
+  float         current_1_w;        // motor 1 current phase W in amp
+  float         voltage_1;          // motor 1 voltage from pwm in volts
+  float         voltage_1_u;        // motor 1 voltage from phase U in volts
+  float         voltage_1_v;        // motor 1 voltage from phase V	in volts
+  float         voltage_1_w;        // motor 1 voltage from phase W in volts
+  float         temperature_1;      // motor 1 estimated temperature in K
+  float         encoder_2;          // encoder 2 value in rad (no wrapping at 2PI)
+  float         velocity_2;         // encoder 2 velocity in rad/s
+  float         current_2_d;        // motor 2 current direct in amp
+  float         current_2_q;        // motor 2 current quadrature in amp
+  float         current_2_u;        // motor 2 current phase U in amp
+  float         current_2_v;        // motor 2 current phase V in amp
+  float         current_2_w;        // motor 2 current phase W in amp
+  float         voltage_2;          // motor 2 voltage from pwm in volts
+  float         voltage_2_u;        // motor 2 voltage from phase U in volts
+  float         voltage_2_v;        // motor 2 voltage from phase V	in volts
+  float         voltage_2_w;        // motor 2 voltage from phase W in volts
+  float         temperature_2;      // motor 2 estimated temperature in K
+  float         encoder_pivot;      // encoder pivot value in rad (wrapping at -PI and +PI)
+  float         velocity_pivot;     // encoder pivot velocity in rad/s
+  float         voltage_bus;        // bus voltage in volts
+  uint64_t      imu_ts;             // EtherCAT timestamp (ns) of IMU sensor acquisition
+  float         accel_x;            // IMU accelerometer X-axis in m/s2
+  float         accel_y;            // IMU accelerometer Y-axis in m/s2
+  float         accel_z;            // IMU accelerometer Z-axis in m/s2
+  float         gyro_x;             // IMU gyro X-axis in rad/s
+  float         gyro_y;             // IMU gyro Y-axis in rad/s
+  float         gyro_z;             // IMU gyro Z-axis in rad/s
+  float         temperature_imu;    // IMU temperature in K	
+  float         pressure;           // barometric pressure in Pa absolute
+  float         current_in;         // current input
 }txpdo1_t;
 
 /* SMARTWHEEL SETPOINT MODES
@@ -156,18 +157,23 @@ typedef struct PACKED{
 #define COM1_SERVOCLOSE       0x0800
 #define COM1_USE_TS			  0x8000
 
-#define COM2_UNUSED			  0x0000
+#define COM2_MODE_VELOCITY         0x0000
+#define COM2_MODE_TORQUE           0x0001
+#define COM2_MODE_TORQUE_LIMITED   0x0002
+
 
 typedef struct PACKED{
-  uint16_t      command1;			// Command bits as defined in COM1_
-  uint16_t		command2;			// Command bits as defined in COM2_
-  float			setpoint1;			// Setpoint 1
-  float			setpoint2;			// Setpoint 2
-  float			limit1_p;			// Upper limit 1
-  float			limit1_n;			// Lower limit 1
-  float			limit2_p;			// Upper limit 2
-  float			limit2_n;			// Lower limit 2
-  uint64_t		timestamp;			// EtherCAT timestamp (ns) setpoint execution
+  uint16_t      dcmd;
+  uint16_t      command1;          // Command bits as defined in COM1_
+  uint16_t      command2;          // Command bits as defined in COM2_
+  float         setpoint1;         // Setpoint 1
+  float         setpoint2;         // Setpoint 2
+  float         limit1_p;          // Upper limit 1
+  float         limit1_n;          // Lower limit 1
+  float         limit2_p;          // Upper limit 2
+  float         limit2_n;          // Lower limit 2
+  uint64_t      timestamp;         // EtherCAT timestamp (ns) setpoint execution
 }rxpdo1_t;
+
 
 #endif // KELOTULIP_KELODRIVEAPI_H_

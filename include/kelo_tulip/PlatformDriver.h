@@ -199,6 +199,9 @@ protected:
 
 	volatile bool statusError;
 	volatile bool timestampError;
+	
+	int initTolerance;
+	int initCounter;
 
 private:
 	PlatformDriver(const PlatformDriver&);

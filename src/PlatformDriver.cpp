@@ -76,6 +76,9 @@ PlatformDriver::PlatformDriver(const std::vector<WheelConfig>& wheelConfigs, con
 	maxangleacc = 0.01; // at vlin=0, per msec, same value for dec
 	maxvaacc = 0.01; // per msec, same value for dec
 	
+	initTolerance = 30;
+	initCounter = 0;
+	
 	// status variables
 	state = DRIVER_STATE_INIT;
 	statusError = false;
@@ -130,7 +133,8 @@ bool PlatformDriver::initEtherCAT(ec_slavet* ecx_slaves, int ecx_slavecount) {
 			return false;
 		}
 
-		if (ecx_slaves[slave].eep_id != 24137745 && ecx_slaves[slave].eep_id != 0 && ecx_slaves[slave].eep_id != 0x17010091 && ecx_slaves[slave].eep_id != 0x02001001) {
+		if (ecx_slaves[slave].eep_id != 24137745 && ecx_slaves[slave].eep_id != 0 && ecx_slaves[slave].eep_id != 0x17010091 && 
+			ecx_slaves[slave].eep_id != 0x02001001  && ecx_slaves[slave].eep_id != 0x10003205) {
 			std::cout << "EtherCAT slave #" << i << " has wrong id: " << ecx_slaves[slave].eep_id << std::endl;
 			return false;
 		}
@@ -479,12 +483,14 @@ void PlatformDriver::doStop() {
 	rxdata.setpoint2 = 0;
 
 	for (int i = 0; i < nWheels; i++) {
-		if (wheelEnabled[i])
+		if (wheelEnabled[i] && initCounter > initTolerance)
 			rxdata.command1 = COM1_ENABLE1 | COM1_ENABLE2 | COM1_MODE_VELOCITY;
-		else
+		else {
 			rxdata.command1 = COM1_MODE_VELOCITY;
-		
-		rxdata.command2 = COM2_UNUSED;
+		    initCounter++;
+			resetErrorFlags();
+		}
+		rxdata.command2 = COM2_MODE_VELOCITY;
 		rxdata.limit1_p = wheelConfigs[i].model.standbycurrent;
 		rxdata.limit1_n = -wheelConfigs[i].model.standbycurrent;
 		rxdata.limit2_p = wheelConfigs[i].model.standbycurrent;
@@ -510,7 +516,7 @@ void PlatformDriver::doControl() {
 		else
 			rxdata.command1 = COM1_MODE_VELOCITY;
 		
-		rxdata.command2 = COM2_UNUSED;	
+		rxdata.command2 = COM2_MODE_VELOCITY;
 		rxdata.limit1_p = wheelConfigs[i].model.currentlimit;
 		rxdata.limit1_n = -wheelConfigs[i].model.currentlimit;
 		rxdata.limit2_p = wheelConfigs[i].model.currentlimit;

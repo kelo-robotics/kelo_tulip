@@ -1,3 +1,4 @@
+uint16  ddata
 uint16  status1
 uint16  status2
 uint64  sensor_ts

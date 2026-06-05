@@ -628,6 +628,7 @@ void PlatformDriverROS::publishProcessDataInput() {
 	for (int i = 0; i < nWheels; i++) {
 		txpdo1_t* swData = driver->getWheelProcessData(i);
 		kelo_tulip::msg::KeloDriveInput wheel;
+		wheel.ddata = swData->ddata;
 		wheel.status1 = swData->status1;
 		wheel.status2 = swData->status2;
 		wheel.sensor_ts = swData->sensor_ts;
