@@ -180,6 +180,7 @@ bool PlatformDriver::stepInit() {
 	if (ready) {
 		state = DRIVER_STATE_READY;
 		std::cout << "PlatformDriver from INIT to READY" << std::endl;
+		resetErrorFlags();
 	}
 		
 	if (stepCount > 500 && !ready) {
