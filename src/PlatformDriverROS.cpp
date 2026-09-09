@@ -283,6 +283,7 @@ void PlatformDriverROS::readWheelConfig() {
 		nh->declare_parameter(groupName + ".x", 0.0);
 		nh->declare_parameter(groupName + ".y", 0.0);
 		nh->declare_parameter(groupName + ".a", 0.0);
+		nh->declare_parameter(groupName + ".model", "KD100");
 
 		kelo::WheelConfig config;
 		config.enable = true;
