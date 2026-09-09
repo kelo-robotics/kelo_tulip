@@ -50,8 +50,17 @@
 #include "kelo_tulip/PlatformDriver.h"
 #include "kelo_tulip/msg/kelo_drives_input.hpp"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2/LinearMath/Quaternion.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#if __has_include("tf2/LinearMath/Quaternion.hpp")
+    #include "tf2/LinearMath/Quaternion.hpp"
+#else
+    #include "tf2/LinearMath/Quaternion.h"
+#endif
+
+#if __has_include("tf2_geometry_msgs/tf2_geometry_msgs.hpp")
+    #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#else
+    #include "tf2_geometry_msgs/tf2_geometry_msgs.h"
+#endif
 #include <nav_msgs/msg/odometry.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/joy.hpp>
