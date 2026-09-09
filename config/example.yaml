@@ -10,16 +10,16 @@
     #va_acc_max: 0.5  # rad / s^2
     #va_dec_max: 1.0  # rad / s^2
 
-wheel_models:
-  KD108:
-    diameter: 0.107
-    width: 0.04
-    casteroffset: 0.01
-    wheeldistance: 0.11
-    velocitylimit: 100.0
-    currentlimit: 1.0
-    standbycurrent: 0.1
-    canPivot: true
+    wheel_models:
+      KD108:
+        diameter: 0.107
+        width: 0.04
+        casteroffset: 0.01
+        wheeldistance: 0.11
+        velocitylimit: 100.0
+        currentlimit: 1.0
+        standbycurrent: 0.1
+        canPivot: true
 
     wheel0:
       model: KD108
