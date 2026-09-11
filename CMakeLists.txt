@@ -1,9 +1,16 @@
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.16)
 project(kelo_tulip)
 
-if(POLICY CMP0148) 
-	cmake_policy(SET CMP0148 OLD) 
+if(POLICY CMP0148)
+		cmake_policy(SET CMP0148 OLD)
 endif()
+
+if("$ENV{ROS_DISTRO}" STREQUAL "foxy")
+    if(POLICY CMP0023)
+        cmake_policy(SET CMP0023 OLD)
+    endif()
+endif()
+
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -74,15 +81,12 @@ add_library(tulip_velocity_controller
 	src/VelocityPlatformController.cpp
 )
 
-ament_target_dependencies(tulip_velocity_controller
-	rclcpp
-	geometry_msgs
-	nav_msgs
-	sensor_msgs
-	std_msgs
-	tf2
-	tf2_ros
-	tf2_geometry_msgs
+target_link_libraries(tulip_velocity_controller
+	PUBLIC
+	rclcpp::rclcpp
+	tf2::tf2
+	tf2_ros::tf2_ros
+	tf2_geometry_msgs::tf2_geometry_msgs
 )
 
 add_library(tulip_library
@@ -95,36 +99,42 @@ add_library(tulip_library
 	src/modules/RobileMasterBatteryROS.cpp
 )
 
-ament_target_dependencies(tulip_library
-	rclcpp
-	geometry_msgs
-	nav_msgs
-	sensor_msgs
-	std_msgs
-	tf2
-	tf2_ros
-	tf2_geometry_msgs
-	Boost
-)
-
 target_link_libraries(tulip_library
+	PUBLIC
+	rclcpp::rclcpp
+	${geometry_msgs_TARGETS}
+	${nav_msgs_TARGETS}
+	${sensor_msgs_TARGETS}
+	${std_msgs_TARGETS}
+	tf2::tf2
+	tf2_ros::tf2_ros
+	tf2_geometry_msgs::tf2_geometry_msgs
+	Boost::thread
+
+	PRIVATE
 	soem
 	tulip_velocity_controller
 )
 
-if ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
-	rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
-	target_link_libraries(tulip_library "${cpp_typesupport_target}")
-else ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
+IF("$ENV{ROS_DISTRO}" STREQUAL "foxy")
 	rosidl_target_interfaces(tulip_library ${PROJECT_NAME} "rosidl_typesupport_cpp")
-endif ("$ENV{ROS_DISTRO}" STRGREATER_EQUAL "humble")
+ELSE()
+	rosidl_get_typesupport_target(cpp_typesupport_target ${PROJECT_NAME} "rosidl_typesupport_cpp")
+	add_dependencies(tulip_library ${PROJECT_NAME})
+	target_link_libraries(tulip_library PUBLIC "${cpp_typesupport_target}")
+ENDIF()
 
 add_executable(platform_driver
 	src/TulipMain.cpp
 )
 
-target_link_libraries(platform_driver   
-	${Boost_LIBRARIES}
+add_dependencies(platform_driver
+	${PROJECT_NAME}
+)
+
+target_link_libraries(platform_driver  
+	PRIVATE
+	Boost::thread
 	tulip_library
 	pthread
 )
